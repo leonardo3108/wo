@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>WO — Workout Tracker</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a56db">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Treino">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f2f2f7;
+  color: #1c1c1e;
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 390px;
+  margin: 0 auto;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.header {
+  background: #e8f0fe;
+  color: #1a56db;
+  padding: 1.5rem 1rem 1.25rem;
+  text-align: center;
+}
+.header-row { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 4px; }
+.header h1 { font-size: 22px; font-weight: 600; }
+.header p  { font-size: 13px; opacity: 0.8; }
+
+.close-btn {
+  position: absolute;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #1a56db;
+  transition: background .15s;
+}
+.close-btn:hover { background: rgba(255,255,255,.45); }
+.close-btn i { font-size: 18px; }
+
+.home-btn {
+  position: absolute;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #1a56db;
+  transition: background .15s;
+}
+.home-btn:hover { background: rgba(255,255,255,.45); }
+.home-btn i { font-size: 18px; }
+
+/* ── Sections ── */
+.section {
+  padding: 1rem;
+  border-bottom: 0.5px solid #e0e0e5;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #1c1c1e;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title i { color: #3b82f6; font-size: 20px; }
+
+/* ── Warmup subsections ── */
+.subsection {
+  background: #f5f5f7;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.subsection:last-child { margin-bottom: 0; }
+.subsection-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #1c1c1e;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.subsection.done { opacity: 0.5; }
+
+.check-btn-sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #d1d1d6;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s, background .15s;
+}
+.check-btn-sm i { font-size: 14px; color: #d1d1d6; transition: color .15s; }
+.check-btn-sm.done { border-color: #34c759; background: #34c759; }
+.check-btn-sm.done i { color: #fff; }
+
+.interval-item {
+  padding: 8px 0;
+  border-bottom: 0.5px solid #d1d1d6;
+}
+.interval-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+.interval-header { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #1c1c1e; }
+
+.interval-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px 8px;
+  font-size: 12px;
+  color: #636366;
+}
+.interval-details span { display: block; }
+
+/* ── Exercise cards ── */
+.exercises-section {
+  padding: 1rem;
+  border-bottom: 0.5px solid #e0e0e5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exercise-card {
+  background: #ffffff;
+  border: 0.5px solid #d1d1d6;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.exercise-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.exercise-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #e8f0fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.exercise-icon i { font-size: 20px; color: #1a56db; }
+
+.exercise-name { font-size: 16px; font-weight: 600; margin-bottom: 3px; color: #1c1c1e; }
+.equipment { font-size: 13px; color: #636366; }
+.equipment a { color: #1a56db; text-decoration: none; }
+
+.check-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #d1d1d6;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s, background .15s;
+  margin-left: auto;
+}
+.check-btn i { font-size: 18px; color: #d1d1d6; transition: color .15s; }
+.check-btn.done { border-color: #34c759; background: #34c759; }
+.check-btn.done i { color: #fff; }
+
+.exercise-card.done { opacity: 0.5; }
+
+.obs-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #d1d1d6;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s, background .15s;
+}
+.obs-btn i { font-size: 16px; color: #d1d1d6; transition: color .15s; }
+.obs-btn.has-obs { border-color: #ff9500; background: #ff9500; }
+.obs-btn.has-obs i { color: #fff; }
+
+.obs-btn-sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #d1d1d6;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s, background .15s;
+}
+.obs-btn-sm i { font-size: 13px; color: #d1d1d6; transition: color .15s; }
+.obs-btn-sm.has-obs { border-color: #ff9500; background: #ff9500; }
+.obs-btn-sm.has-obs i { color: #fff; }
+
+.obs-input {
+  display: none;
+  width: 100%;
+  margin-top: 10px;
+  padding: 7px 10px;
+  background: #f5f5f7;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #1c1c1e;
+  outline: none;
+  resize: none;
+  min-height: 32px;
+}
+.obs-input.open { display: block; }
+.obs-input:focus { box-shadow: 0 0 0 2px #ff9500; }
+.obs-input::placeholder { color: #b0b0b5; }
+.exercise-card.dragging { opacity: .35; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+.exercise-card.drag-over { border-color: #1a56db; background: #f0f5ff; }
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  cursor: grab;
+  color: #c7c7cc;
+  flex-shrink: 0;
+  margin-left: -4px;
+  touch-action: none;
+}
+.drag-handle:active { cursor: grabbing; }
+
+.specs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 0.5px solid #e0e0e5;
+}
+
+.spec-item {
+  background: #f5f5f7;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+.spec-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8e8e93;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+.spec-value { font-size: 16px; font-weight: 600; color: #1c1c1e; }
+.spec-value-sm { font-size: 13px; font-weight: 500; color: #1c1c1e; }
+
+.spec-item.editable { cursor: pointer; }
+.spec-item.editable:hover { background: #e8f0fe; }
+.spec-item.editable:hover .spec-label { color: #1a56db; }
+
+.spec-input {
+  width: 100%;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1c1c1e;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #1a56db;
+  outline: none;
+  padding: 0;
+  font-family: inherit;
+}
+
+/* ── Stretching ── */
+.stretch-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.stretch-item {
+  background: #f5f5f7;
+  padding: 10px 8px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1c1c1e;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  cursor: pointer;
+}
+.stretch-item.done { opacity: 0.5; }
+
+/* ── Tab bar ── */
+.tab-bar {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 0.5px solid #e0e0e5;
+  background: #f5f5f7;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #636366;
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
+  transition: color .15s;
+}
+.tab-btn.active { color: #1a56db; border-bottom-color: #1a56db; font-weight: 600; background: #fff; }
+
+.tab-close {
+  margin-left: 6px;
+  font-size: 14px;
+  color: #8e8e93;
+  line-height: 1;
+  vertical-align: middle;
+}
+.tab-close:hover { color: #ff3b30; }
+
+.limpar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  border: 1.5px solid #ff3b30;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ff3b30;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s;
+}
+.limpar-btn:hover { background: #fff0f0; }
+
+/* ── Home recent list ── */
+.recent-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
+
+.recent-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #636366;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 4px;
+}
+
+.recent-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #1a56db;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+  transition: opacity .15s;
+}
+.recent-btn:hover { opacity: .88; }
+.recent-btn i { font-size: 20px; color: #fff; flex-shrink: 0; }
+.recent-btn.stale { opacity: .5; }
+
+.home-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #c7c7cc;
+  margin-bottom: 1rem;
+}
+.home-divider::before, .home-divider::after { content:''; flex:1; height:.5px; background:#e0e0e5; }
+
+/* ── Picker ── */
+.picker {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 16px;
+  padding: 3rem 1.5rem;
+  min-height: 260px;
+}
+.picker p { font-size: 14px; color: #636366; text-align: center; }
+.picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1a56db;
+  color: #fff;
+  padding: 11px 22px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.picker label:hover { opacity: .88; }
+.picker input[type="file"] { display: none; }
+
+.drop-zone {
+  width: 100%;
+  border: 2px dashed #d1d1d6;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #8e8e93;
+  transition: border-color .15s, background .15s;
+}
+.drop-zone.dragover { border-color: #1a56db; background: #e8f0fe; }
+
+.error {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #636366;
+  font-size: 14px;
+}
+
+/* ── Registrar button ── */
+.registrar-bar {
+  position: sticky;
+  bottom: 0;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: .75rem 1rem;
+  border-top: 0.5px solid #e0e0e5;
+}
+.registrar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px;
+  background: #1a56db;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.registrar-btn:hover { opacity: .88; }
+
+/* ── Add exercise button ── */
+.add-exercise-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  margin-top: 4px;
+  background: transparent;
+  border: 1.5px dashed #d1d1d6;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #636366;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.add-exercise-btn:hover { border-color: #1a56db; color: #1a56db; background: #f0f5ff; }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn .15s ease;
+}
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+.modal {
+  background: #fff;
+  width: 100%;
+  max-width: 390px;
+  border-radius: 20px 20px 0 0;
+  padding: 1.25rem 1rem 2rem;
+  animation: slideUp .2s ease;
+}
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+
+.modal-handle {
+  width: 36px;
+  height: 4px;
+  background: #d1d1d6;
+  border-radius: 2px;
+  margin: 0 auto 1.25rem;
+}
+
+.modal h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1c1c1e;
+}
+
+.modal-field {
+  margin-bottom: 12px;
+}
+.modal-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #8e8e93;
+  margin-bottom: 4px;
+}
+.modal-field input {
+  width: 100%;
+  padding: 10px 12px;
+  background: #f5f5f7;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #1c1c1e;
+  outline: none;
+}
+.modal-field input:focus { box-shadow: 0 0 0 2px #1a56db; }
+
+.modal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 1rem;
+}
+.modal-cancel {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #f5f5f7;
+  font-size: 15px;
+  font-weight: 600;
+  color: #636366;
+  cursor: pointer;
+}
+.modal-confirm {
+  flex: 2;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #1a56db;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.modal-confirm:hover { opacity: .88; }
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+
+<script>
+const ICONS = {
+  'aquecimento': 'ti-run',
+  'alongamento': 'ti-stretching',
+  'pós-treino':  'ti-run',
+};
+
+function getIcon(title) {
+  for (const [key, icon] of Object.entries(ICONS)) {
+    if (title.toLowerCase().includes(key)) return icon;
+  }
+  return 'ti-barbell';
+}
+
+function parseMarkdown(md) {
+  const lines = md.trim().split('\n');
+  let title = '', subtitle = '';
+  const sections = [];
+  let cur = null, sub = null;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+
+    if (line.startsWith('# '))   { title = line.slice(2); }
+    else if (!line.startsWith('#') && !cur && title) { subtitle = line; }
+    else if (line.startsWith('## ')) {
+      if (cur) sections.push(cur);
+      cur = { title: line.slice(3), content: [] };
+      sub = null;
+    } else if (line.startsWith('### ')) {
+      sub = { title: line.slice(4), type: 'subsection', content: [] };
+      cur?.content.push(sub);
+    } else {
+      const link = line.match(/^\[([^\]]+)\]\(([^)]+)\)(.*)/);
+      if (link) {
+        const eq = { name: link[1], url: link[2], extra: link[3].trim() };
+        if (sub) sub.equipment = eq;
+        else if (cur) cur.equipment = eq;
+      } else {
+        (sub ?? cur)?.content.push(line);
+      }
+    }
+  }
+  if (cur) sections.push(cur);
+  return { title, subtitle, sections };
+}
+
+function extractSpecs(content, equipment) {
+  const specs = {};
+  for (const line of content) {
+    if (line.match(/^\d+\s*x\s*/i)) specs.series = line;
+    else if (/^carga\s/i.test(line)) {
+      const rest = line.replace(/^carga\s*/i, '');
+      const regIdx = rest.search(/\bregulagem\b/i);
+      if (regIdx !== -1) {
+        specs.carga = rest.slice(0, regIdx).trim();
+        specs.regulagem = rest.slice(regIdx).replace(/^regulagem\s*/i, '').trim();
+      } else {
+        specs.carga = rest;
+      }
+    } else if (/^regulagem\s/i.test(line)) specs.regulagem = line.replace(/^regulagem\s*/i, '');
+  }
+  if (equipment?.extra) specs.location = equipment.extra;
+  return specs;
+}
+
+function renderIntervals(lines) {
+  return lines
+    .filter(l => l.includes(' - '))
+    .map(line => {
+      const [phase, ...rest] = line.split(' - ');
+      return `<div class="interval-item">
+        <div class="interval-header">${phase}</div>
+        <div class="interval-details">${rest.map(p => `<span>${p}</span>`).join('')}</div>
+      </div>`;
+    }).join('');
+}
+
+function renderWarmup(section) {
+  const subs = section.content.filter(s => s.type === 'subsection');
+  return `<div class="section">
+    <div class="section-title"><i class="ti ti-flame"></i>${section.title}</div>
+    ${subs.map(sub => `
+      <div class="subsection">
+        <div class="subsection-title">
+          <span class="sub-title-text">${sub.title}</span>
+          <div style="display:flex;gap:6px">
+            <button class="obs-btn-sm" onclick="editSubTitle(this)" title="Editar"><i class="ti ti-pencil"></i></button>
+            <button class="check-btn-sm" onclick="toggleDoneSm(this)" title="Marcar como feito"><i class="ti ti-check"></i></button>
+          </div>
+        </div>
+        ${renderIntervals(sub.content)}
+      </div>`).join('')}
+  </div>`;
+}
+
+function renderExercise(section) {
+  const specs = extractSpecs(section.content.filter(l => typeof l === 'string'), section.equipment);
+  const icon = getIcon(section.title);
+
+  const specCells = [
+    specs.series   ? `<div class="spec-item editable" onclick="editCarga(this)" data-original="${specs.series}"><div class="spec-label">Séries</div><div class="spec-value">${specs.series}</div></div>` : '',
+    specs.location ? `<div class="spec-item"><div class="spec-label">Localização</div><div class="spec-value-sm">${specs.location}</div></div>` : '',
+    specs.carga    ? `<div class="spec-item editable" onclick="editCarga(this)" data-original="${specs.carga}"><div class="spec-label">Carga</div><div class="spec-value">${specs.carga}</div></div>` : '',
+    specs.regulagem? `<div class="spec-item"><div class="spec-label">Regulagem</div><div class="spec-value-sm">${specs.regulagem}</div></div>` : '',
+  ].filter(Boolean).join('');
+
+  return `<div class="exercise-card" draggable="true">
+    <div class="exercise-header">
+      <div class="drag-handle"><i class="ti ti-grip-vertical"></i></div>
+      <div class="exercise-icon"><i class="ti ${icon}"></i></div>
+      <div>
+        <div class="exercise-name">${section.title}</div>
+        ${section.equipment ? `<div class="equipment"><a href="${section.equipment.url}" target="_blank">${section.equipment.name}</a></div>` : ''}
+      </div>
+      <button class="obs-btn" onclick="toggleObs(this)" title="Observações">
+        <i class="ti ti-note"></i>
+      </button>
+      <button class="check-btn" onclick="toggleDone(this)" title="Marcar como feito">
+        <i class="ti ti-check"></i>
+      </button>
+    </div>
+    ${specCells ? `<div class="specs">${specCells}</div>` : ''}
+    <textarea class="obs-input" placeholder="Observações..." rows="1"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+  </div>`;
+}
+
+function renderStretching(section) {
+  const items = section.content.filter(l => typeof l === 'string');
+  return `<div class="section">
+    <div class="section-title"><i class="ti ti-stretching"></i>${section.title}</div>
+    <div class="stretch-list">${items.map(i => `<div class="stretch-item" onclick="this.classList.toggle('done');this.querySelector('.check-btn-sm').classList.toggle('done')">${i}<button class="check-btn-sm" style="pointer-events:none"><i class="ti ti-check"></i></button></div>`).join('')}</div>
+  </div>`;
+}
+
+function renderPostWorkout(section) {
+  const lines = section.content.filter(l => typeof l === 'string');
+  const subTitle = lines.find(l => !l.includes(' - ')) || section.title;
+  return `<div class="section">
+    <div class="section-title"><i class="ti ti-run"></i>${section.title}</div>
+    <div class="subsection">
+      <div class="subsection-title" style="margin-bottom:10px">
+        <span class="sub-title-text">${subTitle}</span>
+        <div style="display:flex;gap:6px">
+          <button class="obs-btn-sm" onclick="editSubTitle(this)" title="Editar"><i class="ti ti-pencil"></i></button>
+          <button class="check-btn-sm" onclick="toggleDoneSm(this)" title="Marcar como feito"><i class="ti ti-check"></i></button>
+        </div>
+      </div>
+      ${renderIntervals(lines)}
+    </div>
+  </div>`;
+}
+
+function buildTreinoNode(title, subtitle, sections, fileName) {
+  const node = document.createElement('div');
+  node.className = 'treino-content';
+
+  let html = `<div class="header">
+    <div class="header-row">
+      <button class="close-btn" onclick="fecharTreino('${fileName}')" title="Fechar treino"><i class="ti ti-x"></i></button>
+      <h1>${title}</h1>
+      <button class="home-btn" onclick="goHome()" title="Voltar"><i class="ti ti-home"></i></button>
+    </div>
+    ${subtitle ? `<p>${subtitle}</p>` : ''}
+  </div>`;
+
+  const cards = [];
+  function flushCards() {
+    if (cards.length) {
+      html += `<div class="exercises-section">
+        ${cards.join('')}
+        <button class="add-exercise-btn" onclick="openAddModal(this)">
+          <i class="ti ti-plus"></i> Adicionar exercício
+        </button>
+      </div>`;
+      cards.length = 0;
+    }
+  }
+
+  for (const section of sections) {
+    const key = section.title.toLowerCase();
+    if (key.includes('aquecimento'))  { flushCards(); html += renderWarmup(section); }
+    else if (key.includes('alongamento')) { flushCards(); html += renderStretching(section); }
+    else if (key.includes('pós-treino')) { flushCards(); html += renderPostWorkout(section); }
+    else { cards.push(renderExercise(section)); }
+  }
+  flushCards();
+
+  node.innerHTML = html;
+  node.querySelectorAll('.exercises-section').forEach(s => initDragAndDrop(s));
+  return node;
+}
+
+function renderTabs() {
+  const names = Object.keys(openTreinos);
+  if (names.length === 0) return;
+
+  const app = document.getElementById('app');
+
+  // Monta estrutura se ainda não existe
+  if (!document.getElementById('tab-bar')) {
+    app.innerHTML = `
+      <div id="tab-bar" class="tab-bar"></div>
+      <div id="tab-content"></div>
+      <div class="registrar-bar">
+        <button class="registrar-btn" onclick="registrar()">
+          <i class="ti ti-download"></i> Registrar treino
+        </button>
+      </div>`;
+  }
+
+  // Atualiza abas
+  const tabBar = document.getElementById('tab-bar');
+  tabBar.innerHTML = names.map(name =>
+    `<button class="tab-btn${name === currentTreino ? ' active' : ''}" onclick="switchTab('${name}')">
+      ${openTreinos[name].title}
+    </button>`
+  ).join('');
+
+  // Mostra conteúdo da aba ativa
+  switchTab(currentTreino, false);
+}
+
+function switchTab(name, updateBar = true) {
+  currentTreino = name;
+  const content = document.getElementById('tab-content');
+  if (!content) return;
+  content.innerHTML = '';
+  content.appendChild(openTreinos[name].node);
+  if (updateBar) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.textContent.trim() === openTreinos[name].title);
+    });
+  }
+}
+
+function render(md, fileName) {
+  const { title, subtitle, sections } = parseMarkdown(md);
+  const node = buildTreinoNode(title, subtitle, sections, fileName);
+  openTreinos[fileName] = { title, node };
+  currentTreino = fileName;
+  renderTabs();
+}
+
+let _targetSection = null;
+
+function openAddModal(btn) {
+  _targetSection = btn.closest('.exercises-section');
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Novo exercício</h3>
+      <div class="modal-field">
+        <label>Nome</label>
+        <input id="m-name" type="text" placeholder="Ex: Leg Press">
+      </div>
+      <div class="modal-row">
+        <div class="modal-field" style="margin:0">
+          <label>Séries</label>
+          <input id="m-series" type="text" placeholder="Ex: 3 x 12">
+        </div>
+        <div class="modal-field" style="margin:0">
+          <label>Carga</label>
+          <input id="m-carga" type="text" placeholder="Ex: 40">
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-field" style="margin:0">
+          <label>Regulagem (opcional)</label>
+          <input id="m-reg" type="text" placeholder="Ex: banco 6">
+        </div>
+        <div class="modal-field" style="margin:0">
+          <label>Localização (opcional)</label>
+          <input id="m-loc" type="text" placeholder="Ex: 8 NE">
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Equipamento (opcional)</label>
+        <input id="m-equip" type="text" placeholder="Ex: Leg Press Machine">
+      </div>
+      <div class="modal-actions">
+        <button class="modal-cancel" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+        <button class="modal-confirm" onclick="addExercise(this)">Adicionar</button>
+      </div>
+    </div>`;
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  document.getElementById('m-name').focus();
+}
+
+function addExercise(btn) {
+  const name   = document.getElementById('m-name').value.trim();
+  const series = document.getElementById('m-series').value.trim();
+  const carga  = document.getElementById('m-carga').value.trim();
+  const reg    = document.getElementById('m-reg').value.trim();
+  const loc    = document.getElementById('m-loc').value.trim();
+  const equip  = document.getElementById('m-equip').value.trim();
+  if (!name) { document.getElementById('m-name').focus(); return; }
+
+  const specCells = [
+    series ? `<div class="spec-item editable" onclick="editCarga(this)"><div class="spec-label">Séries</div><div class="spec-value">${series}</div></div>` : '',
+    loc    ? `<div class="spec-item"><div class="spec-label">Localização</div><div class="spec-value-sm">${loc}</div></div>` : '',
+    carga  ? `<div class="spec-item editable" onclick="editCarga(this)"><div class="spec-label">Carga</div><div class="spec-value">${carga}</div></div>`  : '',
+    reg    ? `<div class="spec-item"><div class="spec-label">Regulagem</div><div class="spec-value-sm">${reg}</div></div>` : '',
+  ].filter(Boolean).join('');
+
+  const card = document.createElement('div');
+  card.className = 'exercise-card';
+  card.setAttribute('draggable', 'true');
+  card.innerHTML = `
+    <div class="exercise-header">
+      <div class="drag-handle"><i class="ti ti-grip-vertical"></i></div>
+      <div class="exercise-icon"><i class="ti ti-barbell"></i></div>
+      <div>
+        <div class="exercise-name">${name}</div>
+        ${equip ? `<div class="equipment">${equip}</div>` : ''}
+      </div>
+      <button class="obs-btn" onclick="toggleObs(this)" title="Observações">
+        <i class="ti ti-note"></i>
+      </button>
+      <button class="check-btn" onclick="toggleDone(this)" title="Marcar como feito">
+        <i class="ti ti-check"></i>
+      </button>
+    </div>
+    ${specCells ? `<div class="specs">${specCells}</div>` : ''}
+    <textarea class="obs-input" placeholder="Observações..." rows="1"
+      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>`;
+
+  const ab = _targetSection.querySelector('.add-exercise-btn');
+  _targetSection.insertBefore(card, ab);
+  btn.closest('.modal-overlay').remove();
+}
+
+function coletarTreino(node, linhas) {
+  let temAlgo = false;
+  for (const bloco of node.children) {
+    if (bloco.classList.contains('section')) {
+      const secTitulo = bloco.querySelector('.section-title')?.textContent.trim();
+      const doneSubs  = [...bloco.querySelectorAll('.subsection.done')];
+      const doneStretches = [...bloco.querySelectorAll('.stretch-item.done')];
+
+      if (doneSubs.length) {
+        linhas.push(secTitulo.toUpperCase());
+        doneSubs.forEach(sub => {
+          linhas.push(`- ${sub.querySelector('.sub-title-text')?.textContent.trim()}`);
+          temAlgo = true;
+        });
+        linhas.push('');
+      }
+      if (doneStretches.length) {
+        linhas.push(secTitulo.toUpperCase());
+        doneStretches.forEach(el => {
+          linhas.push(`- ${el.childNodes[0]?.textContent.trim()}`);
+          temAlgo = true;
+        });
+        linhas.push('');
+      }
+    }
+    if (bloco.classList.contains('exercises-section')) {
+      const doneCards = [...bloco.querySelectorAll('.exercise-card')].filter(c => c.querySelector('.check-btn.done'));
+      if (doneCards.length) {
+        linhas.push('EXERCÍCIOS');
+        doneCards.forEach(card => {
+          const nome  = card.querySelector('.exercise-name')?.textContent.trim();
+          const equip = card.querySelector('.equipment a')?.textContent.trim();
+          linhas.push(`- ${nome}${equip ? ` (${equip})` : ''}`);
+          const specs = [...card.querySelectorAll('.spec-item')].map(s =>
+            `${s.querySelector('.spec-label')?.textContent.trim()}: ${s.querySelector('.spec-value, .spec-value-sm')?.textContent.trim()}`
+          );
+          if (specs.length) linhas.push(`  ${specs.join('  |  ')}`);
+          const obs = card.querySelector('.obs-input')?.value.trim();
+          if (obs) linhas.push(`  Obs: ${obs}`);
+          temAlgo = true;
+        });
+        linhas.push('');
+      }
+    }
+  }
+  return temAlgo;
+}
+
+function coletarAjustes(node) {
+  const ajustes = [];
+  [...node.querySelectorAll('.exercise-card')].filter(c => c.querySelector('.check-btn.done')).forEach(card => {
+    const nome  = card.querySelector('.exercise-name')?.textContent.trim();
+    const itens = [];
+    card.querySelectorAll('.spec-item.editable[data-original]').forEach(item => {
+      const original = item.dataset.original;
+      const atual    = item.querySelector('.spec-value')?.textContent.trim();
+      const label    = item.querySelector('.spec-label')?.textContent.trim();
+      if (atual && atual !== original) itens.push(`${label} ${original} > ${atual}`);
+    });
+    if (itens.length) ajustes.push(`- ${nome}: ${itens.join('  |  ')}`);
+  });
+  return ajustes;
+}
+
+async function registrar() {
+  const now  = new Date();
+  const data = now.toLocaleDateString('pt-BR');
+  const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const ymd  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  const titulos = Object.values(openTreinos).map(t => t.title);
+  const linhas  = [`${titulos.join(' + ')} - ${data} as ${hora}`, ''];
+  let temAlgo   = false;
+  const todosAjustes = [];
+
+  for (const [, treino] of Object.entries(openTreinos)) {
+    const node = treino.node;
+    if (Object.keys(openTreinos).length > 1) linhas.push(`== ${treino.title} ==`, '');
+    const achou = coletarTreino(node, linhas);
+    if (achou) temAlgo = true;
+    const aj = coletarAjustes(node);
+    todosAjustes.push(...aj.map(l => Object.keys(openTreinos).length > 1 ? `[${treino.title}] ${l.slice(2)}` : l));
+  }
+
+  if (!temAlgo) { alert('Nenhum exercício marcado como feito.'); return; }
+
+  if (todosAjustes.length) {
+    linhas.push('AJUSTES / EVOLUÇÃO');
+    todosAjustes.forEach(l => linhas.push(l));
+  }
+
+  const texto    = linhas.join('\n');
+  const fileName = `${ymd} ${titulos.join(' ')}.txt`;
+
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'Texto', accept: { 'text/plain': ['.txt'] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(texto);
+      await writable.close();
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback
+  const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function initDragAndDrop(section) {
+  let dragged = null;
+
+  section.addEventListener('dragstart', e => {
+    dragged = e.target.closest('.exercise-card');
+    if (!dragged) return;
+    setTimeout(() => dragged.classList.add('dragging'), 0);
+  });
+
+  section.addEventListener('dragend', () => {
+    if (dragged) dragged.classList.remove('dragging');
+    section.querySelectorAll('.exercise-card').forEach(c => c.classList.remove('drag-over'));
+    dragged = null;
+  });
+
+  section.addEventListener('dragover', e => {
+    e.preventDefault();
+    const target = e.target.closest('.exercise-card');
+    if (!target || target === dragged) return;
+    section.querySelectorAll('.exercise-card').forEach(c => c.classList.remove('drag-over'));
+    target.classList.add('drag-over');
+  });
+
+  section.addEventListener('drop', e => {
+    e.preventDefault();
+    const target = e.target.closest('.exercise-card');
+    if (!target || target === dragged) return;
+    target.classList.remove('drag-over');
+    const cards = [...section.querySelectorAll('.exercise-card')];
+    const draggedIdx = cards.indexOf(dragged);
+    const targetIdx  = cards.indexOf(target);
+    if (draggedIdx < targetIdx) target.after(dragged);
+    else target.before(dragged);
+  });
+}
+
+function editSubTitle(btn) {
+  const titleEl = btn.closest('.subsection-title').querySelector('.sub-title-text');
+  if (titleEl.querySelector('input')) return;
+  const current = titleEl.textContent.trim();
+  titleEl.innerHTML = '';
+  const input = document.createElement('input');
+  input.value = current;
+  input.style.cssText = 'font:inherit;font-weight:600;background:transparent;border:none;border-bottom:2px solid #1a56db;outline:none;width:100%;';
+  titleEl.appendChild(input);
+  input.focus();
+  input.select();
+  function save() {
+    titleEl.textContent = input.value.trim() || current;
+    btn.classList.toggle('has-obs', titleEl.textContent !== current);
+  }
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') input.blur();
+    if (e.key === 'Escape') { titleEl.textContent = current; }
+  });
+}
+
+function toggleObs(btn) {
+  const card  = btn.closest('.exercise-card');
+  const input = card.querySelector('.obs-input');
+  const isOpen = input.classList.contains('open');
+  if (isOpen) {
+    input.classList.remove('open');
+    btn.classList.toggle('has-obs', input.value.trim() !== '');
+  } else {
+    input.classList.add('open');
+    input.focus();
+  }
+}
+
+function toggleDoneSm(btn) {
+  btn.classList.toggle('done');
+  btn.closest('.subsection').classList.toggle('done');
+}
+
+function toggleDone(btn) {
+  btn.classList.toggle('done');
+  btn.closest('.exercise-card').classList.toggle('done');
+}
+
+function editCarga(item) {
+  const valueEl = item.querySelector('.spec-value');
+  if (valueEl.querySelector('input')) return;
+  const current = valueEl.textContent;
+  valueEl.innerHTML = `<input class="spec-input" type="text" value="${current}">`;
+  const input = valueEl.querySelector('input');
+  input.focus();
+  input.select();
+  function save() {
+    const val = input.value.trim() || current;
+    valueEl.textContent = val;
+  }
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') input.blur();
+    if (e.key === 'Escape') { valueEl.textContent = current; }
+  });
+}
+
+// Arquivos abertos nesta sessão: name -> File
+const sessionFiles = {};
+
+// Treinos abertos: name -> { title, htmlContent }
+const openTreinos = {};   // name -> { title, node (div com o conteúdo) }
+let currentTreino = null; // name do treino ativo
+
+function saveRecent(file) {
+  sessionFiles[file.name] = file;
+  try {
+    const names = JSON.parse(localStorage.getItem('recentTreinos') || '[]');
+    if (!names.includes(file.name)) names.unshift(file.name);
+    localStorage.setItem('recentTreinos', JSON.stringify(names.slice(0, 10)));
+  } catch(e) {}
+}
+
+function renderHome() {
+  let recentNames = [];
+  try { recentNames = JSON.parse(localStorage.getItem('recentTreinos') || '[]'); } catch(e) {}
+  recentNames.sort((a, b) => a.localeCompare(b));
+
+  const openNames   = Object.keys(openTreinos);
+  const hasOpen     = openNames.length > 0;
+
+  // Treinos em andamento
+  const openHTML = openNames.sort((a,b) => a.localeCompare(b)).map(name => {
+    const label = openTreinos[name].title;
+    return `<button class="recent-btn" onclick="voltarTreino('${name}')">
+      <i class="ti ti-barbell"></i>${label}
+    </button>`;
+  }).join('');
+
+  // Treinos recentes não abertos
+  const closedNames = recentNames.filter(n => !openTreinos[n]);
+  const closedHTML  = closedNames.map(name => {
+    const label     = name.replace(/\.md$/i, '');
+    const inSession = !!sessionFiles[name];
+    return `<button class="recent-btn${inSession ? '' : ' stale'}" onclick="openRecent('${name}')">
+      <i class="ti ti-barbell"></i>${label}${inSession ? '' : ' <span style="font-size:11px;font-weight:400;margin-left:auto;color:#8e8e93">selecionar arquivo</span>'}
+    </button>`;
+  }).join('');
+
+  const hasRecent = closedNames.length > 0;
+
+  document.getElementById('app').innerHTML = `
+    <div class="picker">
+      ${hasOpen ? `
+        <div class="recent-label">Em andamento</div>
+        <div class="recent-list">${openHTML}</div>
+        ${hasOpen ? `<div class="registrar-bar" style="position:static;margin:0 -1.5rem">
+          <button class="registrar-btn" onclick="registrar()">
+            <i class="ti ti-download"></i> Registrar treino
+          </button>
+        </div>` : ''}
+        <div class="home-divider">adicionar treino</div>` : ''}
+      ${!hasOpen ? `<div class="recent-label">Selecione um treino</div>` : ''}
+      ${hasRecent ? `<div class="recent-list">${closedHTML}</div><div class="home-divider">ou abrir outro</div>` : ''}
+      <label>
+        <i class="ti ti-folder-open"></i> Abrir treino
+        <input type="file" accept=".md" onchange="loadFile(this.files[0])">
+      </label>
+      <div class="drop-zone" id="dropZone">ou arraste o arquivo aqui</div>
+      ${hasOpen ? `<button class="limpar-btn" onclick="limparTudo()"><i class="ti ti-trash"></i> Limpar tudo</button>` : ''}
+    </div>`;
+
+  document.getElementById('dropZone').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('dragover'); });
+  document.getElementById('dropZone').addEventListener('dragleave', e => e.currentTarget.classList.remove('dragover'));
+  document.getElementById('dropZone').addEventListener('drop', e => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file?.name.endsWith('.md')) loadFile(file);
+  });
+}
+
+function voltarTreino(name) {
+  currentTreino = name;
+  renderTabs();
+}
+
+function limparTudo() {
+  if (!confirm('Limpar todos os treinos em andamento?')) return;
+  for (const key of Object.keys(openTreinos)) delete openTreinos[key];
+  currentTreino = null;
+  renderHome();
+}
+
+function fecharTreino(name) {
+  delete openTreinos[name];
+  const names = Object.keys(openTreinos);
+  if (names.length === 0) {
+    renderHome();
+  } else {
+    currentTreino = names[0];
+    renderTabs();
+  }
+}
+
+function openRecent(name) {
+  if (sessionFiles[name]) {
+    loadFile(sessionFiles[name]);
+  } else {
+    // precisa selecionar o arquivo novamente
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.md';
+    input.onchange = e => { if (e.target.files[0]) loadFile(e.target.files[0]); };
+    input.click();
+  }
+}
+
+function goHome() {
+  renderHome();
+}
+
+function loadFile(file) {
+  saveRecent(file);
+  const reader = new FileReader();
+  reader.onload = e => render(e.target.result, file.name);
+  reader.readAsText(file);
+}
+
+renderHome();
+
+// ── Service Worker (PWA) ─────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      // SW não disponível em file:// — precisa de servidor local ou HTTPS
+    });
+  });
+}
+</script>
+</body>
+</html>
