@@ -58,6 +58,23 @@ The `.md` workout files live on your device (local storage, iCloud, Google Drive
 
 ---
 
+## Install as app
+
+### Android
+1. Open `https://leonardo3108.github.io/wo/app.html` in **Chrome**
+2. Tap the **⋮** menu (top right) → **"Add to Home screen"**
+3. Confirm the name → **Add**
+
+### iPhone
+1. Open `https://leonardo3108.github.io/wo/app.html` in **Safari** (Chrome won't work)
+2. Tap the share button **⬆** (bottom center)
+3. Scroll down and tap **"Add to Home Screen"**
+4. Confirm the name → **Add**
+
+Once installed, the app opens without a browser bar and works offline after the first visit.
+
+---
+
 ## Files
 
 | File | Description |
@@ -66,3 +83,9 @@ The `.md` workout files live on your device (local storage, iCloud, Google Drive
 | `manifest.json` | PWA manifest |
 | `sw.js` | Service worker for offline caching |
 | `icon.svg` | App icon |
+
+---
+
+## License
+
+[GNU Affero General Public License v3.0](LICENSE) — free to use and modify, but any derivative work (including hosted services) must also be open source.
