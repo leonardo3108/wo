@@ -1041,21 +1041,27 @@ async function registrar() {
   const hora = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   const ymd  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
-  const titulos = Object.values(openTreinos).map(t => t.title);
-  const linhas  = [`${titulos.join(' + ')} - ${data} as ${hora}`, ''];
-  let temAlgo   = false;
-  const todosAjustes = [];
-
+  // Coleta dados de cada treino separadamente para saber quantos têm atividades
+  const dadosTreinos = [];
   for (const [, treino] of Object.entries(openTreinos)) {
-    const node = treino.node;
-    if (Object.keys(openTreinos).length > 1) linhas.push(`== ${treino.title} ==`, '');
-    const achou = coletarTreino(node, linhas);
-    if (achou) temAlgo = true;
-    const aj = coletarAjustes(node);
-    todosAjustes.push(...aj.map(l => Object.keys(openTreinos).length > 1 ? `[${treino.title}] ${l.slice(2)}` : l));
+    const linhasTreino = [];
+    const achou = coletarTreino(treino.node, linhasTreino);
+    const aj = coletarAjustes(treino.node);
+    if (achou) dadosTreinos.push({ title: treino.title, linhas: linhasTreino, ajustes: aj });
   }
 
-  if (!temAlgo) { alert('Nenhum exercício marcado como feito.'); return; }
+  if (!dadosTreinos.length) { alert('Nenhum exercício marcado como feito.'); return; }
+
+  const multiplo = dadosTreinos.length > 1;
+  const titulos  = dadosTreinos.map(d => d.title);
+  const linhas   = [`${titulos.join(' + ')} - ${data} as ${hora}`, ''];
+  const todosAjustes = [];
+
+  for (const d of dadosTreinos) {
+    if (multiplo) linhas.push(`== ${d.title} ==`, '');
+    linhas.push(...d.linhas);
+    todosAjustes.push(...d.ajustes.map(l => multiplo ? `[${d.title}] ${l.slice(2)}` : l));
+  }
 
   if (todosAjustes.length) {
     linhas.push('AJUSTES / EVOLUÇÃO');
@@ -1249,7 +1255,7 @@ function renderHome() {
       ${hasRecent ? `<div class="recent-list">${closedHTML}</div><div class="home-divider">ou abrir outro</div>` : ''}
       <label>
         <i class="ti ti-folder-open"></i> Abrir treino
-        <input type="file" accept=".md" onchange="loadFile(this.files[0])">
+        <input type="file" accept=".md,text/markdown,text/plain" onchange="loadFile(this.files[0])">
       </label>
       <div class="drop-zone" id="dropZone">ou arraste o arquivo aqui</div>
       ${hasOpen ? `<button class="limpar-btn" onclick="limparTudo()"><i class="ti ti-trash"></i> Limpar tudo</button>` : ''}
@@ -1295,7 +1301,7 @@ function openRecent(name) {
     // precisa selecionar o arquivo novamente
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.md';
+    input.accept = '.md,text/markdown,text/plain';
     input.onchange = e => { if (e.target.files[0]) loadFile(e.target.files[0]); };
     input.click();
   }
