@@ -1,0 +1,8 @@
+{
+  "appId": "com.leonardo.wo",
+  "appName": "WO",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

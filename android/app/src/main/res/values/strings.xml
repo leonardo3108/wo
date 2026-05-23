@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">WO</string>
+    <string name="title_activity_main">WO</string>
+    <string name="package_name">com.leonardo.wo</string>
+    <string name="custom_url_scheme">com.leonardo.wo</string>
+</resources>

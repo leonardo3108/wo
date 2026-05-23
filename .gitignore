@@ -1,0 +1,23 @@
+# Dependências
+node_modules/
+
+# Build do Android
+android/app/build/
+android/.gradle/
+android/local.properties
+
+# Build do iOS
+ios/App/Pods/
+ios/App/build/
+
+# Keystore de assinatura (nunca commitar)
+*.keystore
+*.jks
+
+# Variáveis de ambiente / segredos
+.env
+.env.local
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

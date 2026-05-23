@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fundo arredondado azul -->
+  <rect width="512" height="512" rx="115" fill="#1a56db"/>
+  <!-- Barra central -->
+  <rect x="96" y="232" width="320" height="48" rx="10" fill="white"/>
+  <!-- Placa esquerda externa -->
+  <rect x="44" y="196" width="44" height="120" rx="10" fill="white"/>
+  <!-- Placa esquerda interna -->
+  <rect x="100" y="174" width="52" height="164" rx="10" fill="white"/>
+  <!-- Placa direita interna -->
+  <rect x="360" y="174" width="52" height="164" rx="10" fill="white"/>
+  <!-- Placa direita externa -->
+  <rect x="424" y="196" width="44" height="120" rx="10" fill="white"/>
+</svg>
