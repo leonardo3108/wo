@@ -1,3 +1,5 @@
+const REGISTROS_DIR = 'wo/registros';
+
 function coletarTreino(node, linhas) {
   let temAlgo = false;
   for (const bloco of node.children) {
@@ -108,7 +110,7 @@ async function registrar() {
       }
       let existentes = [];
       try {
-        const dir = await Filesystem.readdir({ path: 'wo', directory: 'EXTERNAL' });
+        const dir = await Filesystem.readdir({ path: REGISTROS_DIR, directory: 'EXTERNAL' });
         existentes = dir.files.map(f => typeof f === 'string' ? f : f.name);
       } catch(e) { /* pasta ainda não existe */ }
       let fileName = `${baseName}.txt`;
@@ -116,7 +118,7 @@ async function registrar() {
       while (existentes.includes(fileName)) fileName = `${baseName} -${i++}.txt`;
 
       await Filesystem.writeFile({
-        path: `wo/${fileName}`,
+        path: `${REGISTROS_DIR}/${fileName}`,
         data: texto,
         directory: 'EXTERNAL',
         encoding: 'utf8',
@@ -171,7 +173,7 @@ async function verRegistros() {
     const Filesystem = window.Capacitor.Plugins.Filesystem;
     let files = [];
     try {
-      const result = await Filesystem.readdir({ path: 'wo', directory: 'EXTERNAL' });
+      const result = await Filesystem.readdir({ path: REGISTROS_DIR, directory: 'EXTERNAL' });
       files = result.files.filter(f => (f.name || f).toString().endsWith('.txt'));
     } catch(e) { /* pasta ainda não existe */ }
 
@@ -314,7 +316,7 @@ async function deletarRegistro(fileName, btn) {
   btn.closest('.modal-overlay').remove();
   try {
     const Filesystem = window.Capacitor.Plugins.Filesystem;
-    await Filesystem.deleteFile({ path: `wo/${fileName}`, directory: 'EXTERNAL' });
+    await Filesystem.deleteFile({ path: `${REGISTROS_DIR}/${fileName}`, directory: 'EXTERNAL' });
     showToast('Registro excluído.');
     verRegistros();
   } catch(e) {
@@ -340,7 +342,7 @@ async function exportarRegistros() {
 
     for (const name of selecionados) {
       const result = await Filesystem.readFile({
-        path: `wo/${name}`,
+        path: `${REGISTROS_DIR}/${name}`,
         directory: 'EXTERNAL',
         encoding: 'utf8',
       });
@@ -386,7 +388,7 @@ async function mostrarRegistro(fileName) {
 
   try {
     const Filesystem = window.Capacitor.Plugins.Filesystem;
-    const result = await Filesystem.readFile({ path: `wo/${fileName}`, directory: 'EXTERNAL', encoding: 'utf8' });
+    const result = await Filesystem.readFile({ path: `${REGISTROS_DIR}/${fileName}`, directory: 'EXTERNAL', encoding: 'utf8' });
     _registroConteudo = result.data;
 
     const label = fileName.replace(/\.txt$/,'');
@@ -421,7 +423,7 @@ async function compartilharRegistro() {
     if (window.Capacitor?.isNativePlatform?.()) {
       const Filesystem = window.Capacitor.Plugins.Filesystem;
       const Share = window.Capacitor.Plugins.Share;
-      const uriResult = await Filesystem.getUri({ path: `wo/${_registroFileName}`, directory: 'EXTERNAL' });
+      const uriResult = await Filesystem.getUri({ path: `${REGISTROS_DIR}/${_registroFileName}`, directory: 'EXTERNAL' });
       await Share.share({
         title: _registroFileName,
         files: [uriResult.uri],
