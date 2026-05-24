@@ -447,10 +447,7 @@ async function _renderHomeNativo() {
         ? `<div class="recent-list">${treinosHTML}</div>`
         : `<p>Nenhum treino salvo</p>`}
       ${hasOpen ? `<button class="limpar-btn" onclick="limparAtividades()"><i class="ti ti-trash"></i> Limpar atividades</button>` : ''}
-      <label>
-        <i class="ti ti-folder-open"></i> Abrir treino
-        <input type="file" accept=".md,text/markdown,text/plain" onchange="loadFile(this.files[0])">
-      </label>
+      <button class="registros-btn" onclick="verTreinos()"><i class="ti ti-list"></i> Gerir treinos</button>
       <div class="recent-label" style="margin-top:1.5rem">Registros de treino</div>
       ${hasOpen ? `<button class="registrar-btn" onclick="registrar()"><i class="ti ti-download"></i> Registrar treino</button>` : ''}
       <button class="registros-btn" onclick="verRegistros()"><i class="ti ti-history"></i> Ver registros</button>
