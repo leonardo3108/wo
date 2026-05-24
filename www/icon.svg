@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <!-- Fundo arredondado azul -->
-  <rect width="512" height="512" rx="115" fill="#1a56db"/>
-  <!-- Barra central -->
-  <rect x="96" y="232" width="320" height="48" rx="10" fill="white"/>
-  <!-- Placa esquerda externa -->
-  <rect x="44" y="196" width="44" height="120" rx="10" fill="white"/>
-  <!-- Placa esquerda interna -->
-  <rect x="100" y="174" width="52" height="164" rx="10" fill="white"/>
-  <!-- Placa direita interna -->
-  <rect x="360" y="174" width="52" height="164" rx="10" fill="white"/>
-  <!-- Placa direita externa -->
-  <rect x="424" y="196" width="44" height="120" rx="10" fill="white"/>
+  <rect width="512" height="512" rx="112" fill="#1a56db"/>
+  <!-- Bar central -->
+  <rect x="160" y="240" width="192" height="32" rx="8" fill="white"/>
+  <!-- Collar esquerdo -->
+  <rect x="128" y="205" width="32" height="102" rx="6" fill="white"/>
+  <!-- Collar direito -->
+  <rect x="352" y="205" width="32" height="102" rx="6" fill="white"/>
+  <!-- Placa esquerda -->
+  <rect x="72" y="176" width="56" height="160" rx="20" fill="white"/>
+  <!-- Placa direita -->
+  <rect x="384" y="176" width="56" height="160" rx="20" fill="white"/>
 </svg>
