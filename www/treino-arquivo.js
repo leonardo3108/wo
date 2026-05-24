@@ -1,3 +1,5 @@
+const TREINOS_DIR = 'wo/treinos';
+
 function parseMarkdown(md) {
   const lines = md.trim().split('\n');
   let title = '', subtitle = '';
@@ -41,21 +43,121 @@ function saveRecent(file) {
   } catch(e) {}
 }
 
-function loadFile(file) {
-  saveRecent(file);
-  const reader = new FileReader();
-  reader.onload = e => render(e.target.result, file.name);
-  reader.readAsText(file);
+// --- Filesystem (nativo) ---
+
+function _lerArquivoComoTexto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
 }
 
-function openRecent(name) {
-  if (sessionFiles[name]) {
-    loadFile(sessionFiles[name]);
+function _confirmarSubstituicao(fileName) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <div class="modal-handle"></div>
+        <h3>Substituir treino?</h3>
+        <p style="font-size:14px;color:#636366;margin:8px 0 16px">"${fileName}" já está salvo no app.</p>
+        <div class="modal-actions">
+          <button class="modal-cancel">Cancelar</button>
+          <button class="modal-danger">Substituir</button>
+        </div>
+      </div>`;
+    overlay.querySelector('.modal-cancel').onclick = () => { overlay.remove(); resolve(false); };
+    overlay.querySelector('.modal-danger').onclick = () => { overlay.remove(); resolve(true); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+    document.body.appendChild(overlay);
+  });
+}
+
+async function treinoExisteNoApp(fileName) {
+  try {
+    await window.Capacitor.Plugins.Filesystem.stat({
+      path: `${TREINOS_DIR}/${fileName}`,
+      directory: 'EXTERNAL',
+    });
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+async function salvarTreinoNoApp(fileName, content) {
+  await window.Capacitor.Plugins.Filesystem.writeFile({
+    path: `${TREINOS_DIR}/${fileName}`,
+    data: content,
+    directory: 'EXTERNAL',
+    encoding: 'utf8',
+    recursive: true,
+  });
+}
+
+async function lerTreinoDoApp(fileName) {
+  const result = await window.Capacitor.Plugins.Filesystem.readFile({
+    path: `${TREINOS_DIR}/${fileName}`,
+    directory: 'EXTERNAL',
+    encoding: 'utf8',
+  });
+  return result.data;
+}
+
+async function listarTreinosNoApp() {
+  try {
+    const result = await window.Capacitor.Plugins.Filesystem.readdir({
+      path: TREINOS_DIR,
+      directory: 'EXTERNAL',
+    });
+    return result.files
+      .map(f => typeof f === 'string' ? f : f.name)
+      .filter(n => n.endsWith('.md'))
+      .sort((a, b) => a.localeCompare(b));
+  } catch(e) {
+    return [];
+  }
+}
+
+// --- loadFile / openRecent ---
+
+async function loadFile(file) {
+  if (window.Capacitor?.isNativePlatform?.()) {
+    const content = await _lerArquivoComoTexto(file);
+    const existe = await treinoExisteNoApp(file.name);
+    if (existe) {
+      const confirmar = await _confirmarSubstituicao(file.name);
+      if (!confirmar) return;
+    }
+    await salvarTreinoNoApp(file.name, content);
+    render(content, file.name);
   } else {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.md,text/markdown,text/plain';
-    input.onchange = e => { if (e.target.files[0]) loadFile(e.target.files[0]); };
-    input.click();
+    saveRecent(file);
+    const reader = new FileReader();
+    reader.onload = e => render(e.target.result, file.name);
+    reader.readAsText(file);
+  }
+}
+
+async function openRecent(name) {
+  if (window.Capacitor?.isNativePlatform?.()) {
+    try {
+      const content = await lerTreinoDoApp(name);
+      render(content, name);
+    } catch(e) {
+      alert('Erro ao abrir treino: ' + (e.message || e));
+    }
+  } else {
+    if (sessionFiles[name]) {
+      loadFile(sessionFiles[name]);
+    } else {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.md,text/markdown,text/plain';
+      input.onchange = e => { if (e.target.files[0]) loadFile(e.target.files[0]); };
+      input.click();
+    }
   }
 }

@@ -413,13 +413,19 @@ const sessionFiles = {};
 const openTreinos = {};
 let currentTreino = null;
 
-function renderHome() {
-  let recentNames = [];
-  try { recentNames = JSON.parse(localStorage.getItem('recentTreinos') || '[]'); } catch(e) {}
-  recentNames.sort((a, b) => a.localeCompare(b));
+async function renderHome() {
+  let names = [];
 
-  const openNames   = Object.keys(openTreinos);
-  const hasOpen     = openNames.length > 0;
+  if (window.Capacitor?.isNativePlatform?.()) {
+    document.getElementById('app').innerHTML = `<div class="picker" style="padding:2rem;text-align:center;color:#636366">Carregando...</div>`;
+    names = await listarTreinosNoApp();
+  } else {
+    try { names = JSON.parse(localStorage.getItem('recentTreinos') || '[]'); } catch(e) {}
+    names.sort((a, b) => a.localeCompare(b));
+  }
+
+  const openNames = Object.keys(openTreinos);
+  const hasOpen   = openNames.length > 0;
 
   const openHTML = openNames.sort((a,b) => a.localeCompare(b)).map(name => {
     const label = openTreinos[name].title;
@@ -428,9 +434,14 @@ function renderHome() {
     </button>`;
   }).join('');
 
-  const closedNames = recentNames.filter(n => !openTreinos[n]);
+  const closedNames = names.filter(n => !openTreinos[n]);
   const closedHTML  = closedNames.map(name => {
-    const label     = name.replace(/\.md$/i, '');
+    const label = name.replace(/\.md$/i, '');
+    if (window.Capacitor?.isNativePlatform?.()) {
+      return `<button class="recent-btn" onclick="openRecent('${name}')">
+        <i class="ti ti-barbell"></i>${label}
+      </button>`;
+    }
     const inSession = !!sessionFiles[name];
     return `<button class="recent-btn${inSession ? '' : ' stale'}" onclick="openRecent('${name}')">
       <i class="ti ti-barbell"></i>${label}${inSession ? '' : ' <span style="font-size:11px;font-weight:400;margin-left:auto;color:#8e8e93">selecionar arquivo</span>'}
