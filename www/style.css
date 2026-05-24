@@ -287,6 +287,8 @@ body {
 .spec-item.editable { cursor: pointer; }
 .spec-item.editable:hover { background: #e8f0fe; }
 .spec-item.editable:hover .spec-label { color: #1a56db; }
+.spec-item.editing { grid-column: 1 / -1; background: #e8f0fe; }
+.spec-item.editing .spec-label { color: #1a56db; }
 
 .spec-input {
   width: 100%;
@@ -594,6 +596,41 @@ body {
 }
 .registrar-btn:hover { opacity: .88; }
 
+/* ── Edit bar ── */
+.edit-bar {
+  position: sticky;
+  bottom: 0;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: .75rem 1rem;
+  padding-bottom: calc(.75rem + env(safe-area-inset-bottom));
+  border-top: 0.5px solid #e0e0e5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.edit-bar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.edit-bar-btn:hover { opacity: .85; }
+.edit-bar-btn i { font-size: 16px; }
+.edit-bar-salvar            { background: #1a56db; color: #fff; }
+.edit-bar-salvar i          { color: #fff; }
+.edit-bar-duplicar          { background: #f2f2f7; color: #1c1c1e; }
+.edit-bar-excluir           { background: #fff0f0; color: #ff3b30; }
+
 /* ── Add exercise button ── */
 .add-exercise-btn {
   display: flex;
@@ -726,6 +763,31 @@ body {
   transition: opacity .15s;
 }
 .modal-danger:hover { opacity: .88; }
+
+/* ── Pills (seleção de tipo/subtipo) ── */
+.pill-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pill-btn {
+  padding: 7px 14px;
+  border: 1.5px solid #e0e0e5;
+  border-radius: 20px;
+  background: #f5f5f7;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  color: #1c1c1e;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.pill-btn.active {
+  background: #1a56db;
+  border-color: #1a56db;
+  color: #fff;
+  font-weight: 600;
+}
 
 /* ── Seleção de registros ── */
 .selecao-check {

@@ -31,106 +31,137 @@ function extractSpecs(content, equipment) {
   return specs;
 }
 
-function renderIntervals(lines) {
+function renderIntervals(lines, editMode = false) {
   return lines
     .filter(l => l.includes(' - '))
     .map(line => {
       const [phase, ...rest] = line.split(' - ');
-      return `<div class="interval-item">
+      return `<div class="interval-item"${editMode ? ' onclick="editIntervalItem(this)" style="cursor:pointer"' : ''}>
         <div class="interval-header">${phase}</div>
         <div class="interval-details">${rest.map(p => `<span>${p}</span>`).join('')}</div>
       </div>`;
     }).join('');
 }
 
-function renderWarmup(section) {
+function renderWarmup(section, editMode = false) {
   const subs = section.content.filter(s => s.type === 'subsection');
   return `<div class="section">
-    <div class="section-title"><i class="ti ti-flame"></i>${section.title}</div>
+    <div class="section-title"><i class="ti ti-flame"></i>${
+      editMode
+        ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>`
+        : section.title
+    }</div>
     ${subs.map(sub => `
       <div class="subsection">
         <div class="subsection-title">
-          <span class="sub-title-text">${sub.title}</span>
-          <div style="display:flex;gap:6px">
+          <span class="sub-title-text"${editMode ? ' onclick="editInPlace(this)" style="cursor:pointer"' : ''}>${sub.title}</span>
+          ${!editMode ? `<div style="display:flex;gap:6px">
             <button class="obs-btn-sm" onclick="editSubTitle(this)" title="Editar"><i class="ti ti-pencil"></i></button>
             <button class="check-btn-sm" onclick="toggleDoneSm(this)" title="Marcar como feito"><i class="ti ti-check"></i></button>
-          </div>
+          </div>` : ''}
         </div>
-        ${renderIntervals(sub.content)}
+        ${renderIntervals(sub.content, editMode)}
       </div>`).join('')}
   </div>`;
 }
 
-function renderExercise(section) {
+function renderExercise(section, editMode = false) {
   const specs = extractSpecs(section.content.filter(l => typeof l === 'string'), section.equipment);
-  const icon = getIcon(section.title);
+  const icon  = getIcon(section.title);
 
-  const specCells = [
-    specs.series   ? `<div class="spec-item editable" onclick="editCarga(this)" data-original="${specs.series}"><div class="spec-label">Séries</div><div class="spec-value">${specs.series}</div></div>` : '',
-    specs.location ? `<div class="spec-item"><div class="spec-label">Localização</div><div class="spec-value-sm">${specs.location}</div></div>` : '',
-    specs.carga    ? `<div class="spec-item editable" onclick="editCarga(this)" data-original="${specs.carga}"><div class="spec-label">Carga</div><div class="spec-value">${specs.carga}</div></div>` : '',
-    specs.regulagem? `<div class="spec-item"><div class="spec-label">Regulagem</div><div class="spec-value-sm">${specs.regulagem}</div></div>` : '',
-  ].filter(Boolean).join('');
+  const specCells = editMode
+    ? [
+        ['Séries',     specs.series    || ''],
+        ['Carga',      specs.carga     || ''],
+        ['Regulagem',  specs.regulagem || ''],
+        ['Localização',specs.location  || ''],
+      ].map(([label, val]) =>
+        `<div class="spec-item editable" onclick="editCarga(this)"><div class="spec-label">${label}</div><div class="spec-value">${val}</div></div>`
+      ).join('')
+    : [
+        specs.series   ? `<div class="spec-item editable" onclick="editCarga(this)" data-original="${specs.series}"><div class="spec-label">Séries</div><div class="spec-value">${specs.series}</div></div>` : '',
+        specs.location ? `<div class="spec-item"><div class="spec-label">Localização</div><div class="spec-value-sm">${specs.location}</div></div>` : '',
+        specs.carga    ? `<div class="spec-item editable" onclick="editCarga(this)" data-original="${specs.carga}"><div class="spec-label">Carga</div><div class="spec-value">${specs.carga}</div></div>` : '',
+        specs.regulagem? `<div class="spec-item"><div class="spec-label">Regulagem</div><div class="spec-value-sm">${specs.regulagem}</div></div>` : '',
+      ].filter(Boolean).join('');
 
   return `<div class="exercise-card" draggable="true">
     <div class="exercise-header">
       <div class="drag-handle"><i class="ti ti-grip-vertical"></i></div>
       <div class="exercise-icon"><i class="ti ${icon}"></i></div>
-      <div>
-        <div class="exercise-name">${section.title}</div>
+      <div${editMode ? ' style="flex:1;min-width:0"' : ''}>
+        <div class="exercise-name"${editMode ? ' onclick="editInPlace(this)" style="cursor:pointer"' : ''}>${section.title}</div>
         ${section.equipment ? `<div class="equipment"><a href="${section.equipment.url}" target="_blank">${section.equipment.name}</a></div>` : ''}
       </div>
-      <button class="obs-btn" onclick="toggleObs(this)" title="Observações">
-        <i class="ti ti-note"></i>
-      </button>
-      <button class="check-btn" onclick="toggleDone(this)" title="Marcar como feito">
-        <i class="ti ti-check"></i>
-      </button>
+      ${!editMode ? `<button class="obs-btn" onclick="toggleObs(this)" title="Observações"><i class="ti ti-note"></i></button>
+      <button class="check-btn" onclick="toggleDone(this)" title="Marcar como feito"><i class="ti ti-check"></i></button>` : ''}
     </div>
     ${specCells ? `<div class="specs">${specCells}</div>` : ''}
-    <textarea class="obs-input" placeholder="Observações..." rows="1"
-      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+    ${!editMode ? `<textarea class="obs-input" placeholder="Observações..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>` : ''}
   </div>`;
 }
 
-function renderStretching(section) {
+function renderStretching(section, editMode = false) {
   const items = section.content.filter(l => typeof l === 'string');
   return `<div class="section">
-    <div class="section-title"><i class="ti ti-stretching"></i>${section.title}</div>
-    <div class="stretch-list">${items.map(i => `<div class="stretch-item" onclick="this.classList.toggle('done');this.querySelector('.check-btn-sm').classList.toggle('done')">${i}<button class="check-btn-sm" style="pointer-events:none"><i class="ti ti-check"></i></button></div>`).join('')}</div>
+    <div class="section-title"><i class="ti ti-stretching"></i>${
+      editMode
+        ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>`
+        : section.title
+    }</div>
+    <div class="stretch-list">${items.map(i =>
+      editMode
+        ? `<div class="stretch-item"><span onclick="editInPlace(this)" style="cursor:pointer">${i}</span></div>`
+        : `<div class="stretch-item" onclick="this.classList.toggle('done');this.querySelector('.check-btn-sm').classList.toggle('done')">${i}<button class="check-btn-sm" style="pointer-events:none"><i class="ti ti-check"></i></button></div>`
+    ).join('')}</div>
   </div>`;
 }
 
-function renderPostWorkout(section) {
-  const lines = section.content.filter(l => typeof l === 'string');
+function renderPostWorkout(section, editMode = false) {
+  const lines    = section.content.filter(l => typeof l === 'string');
   const subTitle = lines.find(l => !l.includes(' - ')) || section.title;
   return `<div class="section">
-    <div class="section-title"><i class="ti ti-run"></i>${section.title}</div>
+    <div class="section-title"><i class="ti ti-run"></i>${
+      editMode
+        ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>`
+        : section.title
+    }</div>
     <div class="subsection">
       <div class="subsection-title" style="margin-bottom:10px">
-        <span class="sub-title-text">${subTitle}</span>
-        <div style="display:flex;gap:6px">
+        <span class="sub-title-text"${editMode ? ' onclick="editInPlace(this)" style="cursor:pointer"' : ''}>${subTitle}</span>
+        ${!editMode ? `<div style="display:flex;gap:6px">
           <button class="obs-btn-sm" onclick="editSubTitle(this)" title="Editar"><i class="ti ti-pencil"></i></button>
           <button class="check-btn-sm" onclick="toggleDoneSm(this)" title="Marcar como feito"><i class="ti ti-check"></i></button>
-        </div>
+        </div>` : ''}
       </div>
-      ${renderIntervals(lines)}
+      ${renderIntervals(lines, editMode)}
     </div>
   </div>`;
 }
 
-function buildTreinoNode(title, subtitle, sections, fileName) {
+function buildTreinoNode(title, subtitle, sections, fileName, editMode = false) {
   const node = document.createElement('div');
   node.className = 'treino-content';
 
-  let html = `<div class="header">
-    <div class="header-row">
-      <button class="close-btn" onclick="fecharTreino('${fileName}')" title="Fechar treino"><i class="ti ti-x"></i></button>
-      <h1>${title}</h1>
-      <button class="home-btn" onclick="goHome()" title="Voltar"><i class="ti ti-home"></i></button>
-    </div>
-    ${subtitle ? `<p>${subtitle}</p>` : ''}
-  </div>`;
+  let html = editMode
+    ? `<div class="header">
+        <div class="header-row">
+          <button class="close-btn" onclick="verTreinos()" title="Voltar"><i class="ti ti-arrow-left"></i></button>
+          <h1 onclick="editInPlace(this)" style="cursor:pointer;flex:1;text-align:center">${title}</h1>
+          <button class="home-btn" onclick="compartilharTreinoEditado()" title="Compartilhar"><i class="ti ti-share"></i></button>
+        </div>
+        ${subtitle
+          ? `<p onclick="editSubtitulo(this)" style="cursor:pointer">${subtitle}</p>`
+          : `<p onclick="editSubtitulo(this)" style="cursor:pointer;opacity:.35">Toque para adicionar subtítulo</p>`}
+      </div>`
+    : `<div class="header">
+        <div class="header-row">
+          <button class="close-btn" onclick="fecharTreino('${fileName}')" title="Fechar treino"><i class="ti ti-x"></i></button>
+          <h1>${title}</h1>
+          <button class="home-btn" onclick="goHome()" title="Voltar"><i class="ti ti-home"></i></button>
+        </div>
+        ${subtitle ? `<p>${subtitle}</p>` : ''}
+      </div>`;
 
   const cards = [];
   function flushCards() {
@@ -147,12 +178,26 @@ function buildTreinoNode(title, subtitle, sections, fileName) {
 
   for (const section of sections) {
     const key = section.title.toLowerCase();
-    if (key.includes('aquecimento'))  { flushCards(); html += renderWarmup(section); }
-    else if (key.includes('alongamento')) { flushCards(); html += renderStretching(section); }
-    else if (key.includes('pós-treino')) { flushCards(); html += renderPostWorkout(section); }
-    else { cards.push(renderExercise(section)); }
+    if (key.includes('aquecimento'))      { flushCards(); html += renderWarmup(section, editMode); }
+    else if (key.includes('alongamento')) { flushCards(); html += renderStretching(section, editMode); }
+    else if (key.includes('pós-treino'))  { flushCards(); html += renderPostWorkout(section, editMode); }
+    else { cards.push(renderExercise(section, editMode)); }
   }
   flushCards();
+
+  if (editMode) {
+    html += `<div class="edit-bar">
+      <button class="edit-bar-btn edit-bar-excluir" onclick="confirmarDelecaoTreino('${fileName}')">
+        <i class="ti ti-trash"></i>Excluir
+      </button>
+      <button class="edit-bar-btn edit-bar-duplicar" onclick="duplicarTreino()">
+        <i class="ti ti-copy"></i>Duplicar
+      </button>
+      <button class="edit-bar-btn edit-bar-salvar" onclick="salvarTreinoEditado()">
+        <i class="ti ti-device-floppy"></i>Salvar
+      </button>
+    </div>`;
+  }
 
   node.innerHTML = html;
   node.querySelectorAll('.exercises-section').forEach(s => initDragAndDrop(s));
@@ -201,6 +246,7 @@ function switchTab(name, updateBar = true) {
 
 function render(md, fileName) {
   const { title, subtitle, sections } = parseMarkdown(md);
+  _setTreinoTipo(fileName, _tipoFromSubtitle(subtitle));
   const node = buildTreinoNode(title, subtitle, sections, fileName);
   openTreinos[fileName] = { title, node };
   currentTreino = fileName;
@@ -227,7 +273,7 @@ function openAddModal(btn) {
           <input id="m-series" type="text" placeholder="Ex: 3 x 12">
         </div>
         <div class="modal-field" style="margin:0">
-          <label>Carga</label>
+          <label>Carga (opcional)</label>
           <input id="m-carga" type="text" placeholder="Ex: 40">
         </div>
       </div>
@@ -383,18 +429,21 @@ function editCarga(item) {
   const valueEl = item.querySelector('.spec-value');
   if (valueEl.querySelector('input')) return;
   const current = valueEl.textContent;
+  item.classList.add('editing');
   valueEl.innerHTML = `<input class="spec-input" type="text" value="${current}">`;
   const input = valueEl.querySelector('input');
   input.focus();
   input.select();
+  function done() { item.classList.remove('editing'); }
   function save() {
-    const val = input.value.trim() || current;
-    valueEl.textContent = val;
+    valueEl.textContent = input.value.trim();
+    if (_treinoEditFileName) _treinoPodeCompartilhar = false;
+    done();
   }
   input.addEventListener('blur', save);
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') input.blur();
-    if (e.key === 'Escape') { valueEl.textContent = current; }
+    if (e.key === 'Escape') { valueEl.textContent = current; done(); }
   });
 }
 
@@ -434,8 +483,9 @@ async function _renderHomeNativo() {
     const label  = name.replace(/\.md$/i, '');
     const ativo  = !!openTreinos[name];
     const action = ativo ? `voltarTreino('${name}')` : `openRecent('${name}')`;
+    const icone  = getTipoIcone(_getTreinoTipo(name));
     return `<button class="recent-btn" onclick="${action}">
-      <i class="ti ti-barbell"></i>${label}
+      <i class="ti ${icone}"></i>${label}
       ${ativo ? `<i class="ti ti-player-play" style="margin-left:auto;font-size:16px"></i>` : ''}
     </button>`;
   }).join('');
