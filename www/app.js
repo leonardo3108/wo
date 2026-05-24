@@ -414,15 +414,53 @@ const openTreinos = {};
 let currentTreino = null;
 
 async function renderHome() {
-  let names = [];
-
   if (window.Capacitor?.isNativePlatform?.()) {
-    document.getElementById('app').innerHTML = `<div class="picker" style="padding:2rem;text-align:center;color:#636366">Carregando...</div>`;
-    names = await listarTreinosNoApp();
+    await _renderHomeNativo();
   } else {
-    try { names = JSON.parse(localStorage.getItem('recentTreinos') || '[]'); } catch(e) {}
-    names.sort((a, b) => a.localeCompare(b));
+    _renderHomeBrowser();
   }
+}
+
+async function _renderHomeNativo() {
+  document.getElementById('app').innerHTML = `<div class="picker" style="padding:2rem;text-align:center;color:#636366">Carregando...</div>`;
+  const allNames = await listarTreinosNoApp();
+
+  const emAndamento = allNames.filter(n =>  openTreinos[n]).sort((a, b) => a.localeCompare(b));
+  const disponiveis = allNames.filter(n => !openTreinos[n]).sort((a, b) => a.localeCompare(b));
+  const ordenados   = [...emAndamento, ...disponiveis];
+  const hasOpen     = emAndamento.length > 0;
+
+  const treinosHTML = ordenados.map(name => {
+    const label  = name.replace(/\.md$/i, '');
+    const ativo  = !!openTreinos[name];
+    const action = ativo ? `voltarTreino('${name}')` : `openRecent('${name}')`;
+    return `<button class="recent-btn" onclick="${action}">
+      <i class="ti ti-barbell"></i>${label}
+      ${ativo ? `<i class="ti ti-player-play" style="margin-left:auto;font-size:16px"></i>` : ''}
+    </button>`;
+  }).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="picker">
+      <div class="recent-label">Treinos</div>
+      ${ordenados.length
+        ? `<div class="recent-list">${treinosHTML}</div>`
+        : `<p>Nenhum treino salvo</p>`}
+      ${hasOpen ? `<button class="limpar-btn" onclick="limparAtividades()"><i class="ti ti-trash"></i> Limpar atividades</button>` : ''}
+      <label>
+        <i class="ti ti-folder-open"></i> Abrir treino
+        <input type="file" accept=".md,text/markdown,text/plain" onchange="loadFile(this.files[0])">
+      </label>
+      <div class="recent-label" style="margin-top:1.5rem">Registros de treino</div>
+      ${hasOpen ? `<button class="registrar-btn" onclick="registrar()"><i class="ti ti-download"></i> Registrar treino</button>` : ''}
+      <button class="registros-btn" onclick="verRegistros()"><i class="ti ti-history"></i> Ver registros</button>
+    </div>`;
+}
+
+function _renderHomeBrowser() {
+  let recentNames = [];
+  try { recentNames = JSON.parse(localStorage.getItem('recentTreinos') || '[]'); } catch(e) {}
+  recentNames.sort((a, b) => a.localeCompare(b));
 
   const openNames = Object.keys(openTreinos);
   const hasOpen   = openNames.length > 0;
@@ -434,14 +472,9 @@ async function renderHome() {
     </button>`;
   }).join('');
 
-  const closedNames = names.filter(n => !openTreinos[n]);
+  const closedNames = recentNames.filter(n => !openTreinos[n]);
   const closedHTML  = closedNames.map(name => {
-    const label = name.replace(/\.md$/i, '');
-    if (window.Capacitor?.isNativePlatform?.()) {
-      return `<button class="recent-btn" onclick="openRecent('${name}')">
-        <i class="ti ti-barbell"></i>${label}
-      </button>`;
-    }
+    const label     = name.replace(/\.md$/i, '');
     const inSession = !!sessionFiles[name];
     return `<button class="recent-btn${inSession ? '' : ' stale'}" onclick="openRecent('${name}')">
       <i class="ti ti-barbell"></i>${label}${inSession ? '' : ' <span style="font-size:11px;font-weight:400;margin-left:auto;color:#8e8e93">selecionar arquivo</span>'}
@@ -455,7 +488,7 @@ async function renderHome() {
       ${hasOpen ? `
         <div class="recent-label">Em andamento</div>
         <div class="recent-list">${openHTML}</div>
-        <button class="limpar-btn" onclick="limparTudo()"><i class="ti ti-trash"></i> Limpar tudo</button>
+        <button class="limpar-btn" onclick="limparAtividades()"><i class="ti ti-trash"></i> Limpar tudo</button>
         <div class="home-divider">adicionar treino</div>` : ''}
       ${!hasOpen ? `<div class="recent-label">Selecione um treino</div>` : ''}
       ${hasRecent ? `<div class="recent-list">${closedHTML}</div><div class="home-divider">ou abrir outro</div>` : ''}
@@ -466,7 +499,6 @@ async function renderHome() {
       <div class="drop-zone" id="dropZone">ou arraste o arquivo aqui</div>
       <div class="home-divider">registros de treino</div>
       ${hasOpen ? `<button class="registrar-btn" onclick="registrar()"><i class="ti ti-download"></i> Registrar treino</button>` : ''}
-      ${window.Capacitor?.isNativePlatform?.() ? `<button class="registros-btn" onclick="verRegistros()"><i class="ti ti-history"></i> Ver registros</button>` : ''}
     </div>`;
 
   document.getElementById('dropZone').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('dragover'); });
@@ -484,8 +516,8 @@ function voltarTreino(name) {
   renderTabs();
 }
 
-function limparTudo() {
-  if (!confirm('Limpar todos os treinos em andamento?')) return;
+function limparAtividades() {
+  if (!confirm('Limpar todas as atividades em andamento?')) return;
   for (const key of Object.keys(openTreinos)) delete openTreinos[key];
   currentTreino = null;
   renderHome();
