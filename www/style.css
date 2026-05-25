@@ -563,6 +563,27 @@ body {
 .home-actions { display: flex; gap: 10px; }
 .home-actions > * { flex: 1; }
 
+.ajuda-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 11px;
+  margin-top: .5rem;
+  border: none;
+  background: #f2f2f7;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #636366;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ajuda-btn:hover { background: #e5e5ea; }
+.ajuda-btn i { font-size: 18px; color: #1a56db; }
+
 .registros-view {
   display: flex;
   flex-direction: column;
