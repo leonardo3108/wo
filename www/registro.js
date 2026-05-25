@@ -3,7 +3,7 @@ const REGISTROS_DIR = 'wo/registros';
 function coletarTreino(node, linhas) {
   let temAlgo = false;
   for (const bloco of node.children) {
-    if (bloco.classList.contains('section')) {
+    if (bloco.classList.contains('section') && !bloco.dataset.added) {
       const secTitulo = bloco.querySelector('.section-title')?.textContent.trim();
       const doneSubs  = [...bloco.querySelectorAll('.subsection.done')];
       const doneStretches = [...bloco.querySelectorAll('.stretch-item.done')];
@@ -26,7 +26,8 @@ function coletarTreino(node, linhas) {
       }
     }
     if (bloco.classList.contains('exercises-section')) {
-      const doneCards = [...bloco.querySelectorAll('.exercise-card')].filter(c => c.querySelector('.check-btn.done'));
+      const doneCards = [...bloco.querySelectorAll('.exercise-card')]
+        .filter(c => c.querySelector('.check-btn.done') && !c.dataset.added);
       if (doneCards.length) {
         linhas.push('EXERCÍCIOS');
         doneCards.forEach(card => {
@@ -46,6 +47,60 @@ function coletarTreino(node, linhas) {
     }
   }
   return temAlgo;
+}
+
+function coletarAdicionados(node) {
+  const adicionados = [];
+  for (const bloco of node.children) {
+    if (bloco.classList.contains('section') && bloco.dataset.added) {
+      const titulo = bloco.querySelector('.section-title')?.textContent.trim();
+      const sub    = bloco.querySelector('.sub-title-text')?.textContent.trim();
+      if (titulo) adicionados.push(sub ? `${titulo} - ${sub}` : titulo);
+    }
+    if (bloco.classList.contains('exercises-section')) {
+      bloco.querySelectorAll('.exercise-card[data-added]').forEach(card => {
+        const nome  = card.querySelector('.exercise-name')?.textContent.trim();
+        const equip = card.querySelector('.equipment a')?.textContent.trim()
+                   || card.querySelector('.equipment')?.textContent.trim()
+                   || '';
+        if (nome) adicionados.push(`${nome}${equip ? ` (${equip})` : ''}`);
+      });
+    }
+  }
+  return adicionados;
+}
+
+function _coletarDadosAtualizacao(node) {
+  const items = [];
+  for (const bloco of node.children) {
+    if (bloco.classList.contains('section') && bloco.dataset.added) {
+      const titulo = bloco.querySelector('.section-title')?.textContent.trim();
+      const sub    = bloco.querySelector('.sub-title-text')?.textContent.trim();
+      items.push({ type: 'add', label: sub ? `${titulo} - ${sub}` : titulo, element: bloco });
+    }
+    if (bloco.classList.contains('exercises-section')) {
+      bloco.querySelectorAll('.exercise-card[data-added]').forEach(card => {
+        const nome  = card.querySelector('.exercise-name')?.textContent.trim();
+        const equip = card.querySelector('.equipment a')?.textContent.trim()
+                   || card.querySelector('.equipment')?.textContent.trim() || '';
+        items.push({ type: 'add', label: `${nome}${equip ? ` (${equip})` : ''}`, element: card });
+      });
+      bloco.querySelectorAll('.exercise-card:not([data-added])').forEach(card => {
+        if (!card.querySelector('.check-btn.done')) return;
+        const nome  = card.querySelector('.exercise-name')?.textContent.trim();
+        const equip = card.querySelector('.equipment a')?.textContent.trim()
+                   || card.querySelector('.equipment')?.textContent.trim() || '';
+        const specs = [];
+        card.querySelectorAll('.spec-item.editable[data-original]').forEach(item => {
+          const original = item.dataset.original;
+          const atual    = item.querySelector('.spec-value')?.textContent.trim();
+          if (atual && atual !== original) specs.push({ element: item, original });
+        });
+        if (specs.length) items.push({ type: 'ajust', label: `${nome}${equip ? ` (${equip})` : ''}`, specs });
+      });
+    }
+  }
+  return items;
 }
 
 function coletarAjustes(node) {
@@ -74,8 +129,9 @@ async function registrar() {
   for (const [, treino] of Object.entries(openTreinos)) {
     const linhasTreino = [];
     const achou = coletarTreino(treino.node, linhasTreino);
-    const aj = coletarAjustes(treino.node);
-    if (achou) dadosTreinos.push({ title: treino.title, linhas: linhasTreino, ajustes: aj });
+    const aj  = coletarAjustes(treino.node);
+    const add = coletarAdicionados(treino.node);
+    if (achou || add.length) dadosTreinos.push({ title: treino.title, linhas: linhasTreino, ajustes: aj, adicionados: add });
   }
 
   if (!dadosTreinos.length) { alert('Nenhum exercício marcado como feito.'); return; }
@@ -83,12 +139,20 @@ async function registrar() {
   const multiplo = dadosTreinos.length > 1;
   const titulos  = dadosTreinos.map(d => d.title);
   const linhas   = [`${titulos.join(' + ')} - ${data} as ${hora}`, ''];
-  const todosAjustes = [];
+  const todosAjustes    = [];
+  const todosAdicionados = [];
 
   for (const d of dadosTreinos) {
     if (multiplo) linhas.push(`== ${d.title} ==`, '');
     linhas.push(...d.linhas);
     todosAjustes.push(...d.ajustes.map(l => multiplo ? `[${d.title}] ${l.slice(2)}` : l));
+    todosAdicionados.push(...d.adicionados.map(l => multiplo ? `[${d.title}] ${l}` : `- ${l}`));
+  }
+
+  if (todosAdicionados.length) {
+    linhas.push('EXERCÍCIOS ADICIONADOS');
+    todosAdicionados.forEach(l => linhas.push(l));
+    linhas.push('');
   }
 
   if (todosAjustes.length) {
@@ -124,7 +188,14 @@ async function registrar() {
         encoding: 'utf8',
         recursive: true,
       });
-      alert(`Salvo: ${fileName}`);
+      showToast(`Salvo: ${fileName}`);
+      _pendingUpdates = [];
+      for (const [fn, treino] of Object.entries(openTreinos)) {
+        const items = _coletarDadosAtualizacao(treino.node);
+        if (items.length) _pendingUpdates.push({ fileName: fn, title: treino.title, items });
+      }
+      if (_pendingUpdates.length) _mostrarModalAtualizacoes();
+      else _concluirTreino();
       return;
     } catch(e) {
       alert('Erro ao salvar: ' + (e.message || JSON.stringify(e)));
@@ -144,6 +215,7 @@ async function registrar() {
       const writable = await handle.createWritable();
       await writable.write(texto);
       await writable.close();
+      _concluirTreino();
       return;
     } catch(e) {
       if (e.name === 'AbortError') return;
@@ -158,6 +230,7 @@ async function registrar() {
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+  _concluirTreino();
 }
 
 async function verRegistros() {
@@ -325,7 +398,8 @@ async function deletarRegistro(fileName, btn) {
 }
 
 let _listaRegistros = [];
-let _modoSelecao = false;
+let _modoSelecao    = false;
+let _pendingUpdates = [];
 
 async function exportarRegistros() {
   const selecionados = _modoSelecao
@@ -441,4 +515,101 @@ async function compartilharRegistro() {
     if (canceled) showToast('Compartilhamento cancelado.');
     else alert('Erro ao compartilhar: ' + e.message);
   }
+}
+
+function _mostrarModalAtualizacoes() {
+  const multiplo = _pendingUpdates.length > 1;
+
+  const itemsHTML = _pendingUpdates.map((treino, ti) => {
+    const header = multiplo
+      ? `<div style="font-weight:600;font-size:13px;color:#636366;margin:${ti > 0 ? '14px' : '0'} 0 4px">${treino.title}</div>`
+      : '';
+    const lista = treino.items.map((item, ii) => {
+      const verb = item.type === 'add' ? 'Adicionar' : 'Ajustar';
+      return `<label style="display:flex;align-items:center;gap:10px;padding:5px 0;font-size:14px;cursor:pointer">
+        <input type="checkbox" data-ti="${ti}" data-ii="${ii}" checked style="width:18px;height:18px;flex-shrink:0;cursor:pointer">
+        ${verb} ${item.label}
+      </label>`;
+    }).join('');
+    return header + lista;
+  }).join('');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Atualizar treino${multiplo ? 's' : ''}?</h3>
+      <div style="margin:10px 0 4px;max-height:40vh;overflow-y:auto">${itemsHTML}</div>
+      <div class="modal-actions">
+        <button class="modal-cancel">Não</button>
+        <button class="modal-confirm">Atualizar</button>
+      </div>
+    </div>`;
+  overlay.querySelector('.modal-cancel').addEventListener('click', () => { overlay.remove(); _concluirTreino(); });
+  overlay.querySelector('.modal-confirm').addEventListener('click', () => _aplicarAtualizacoesTreino(overlay));
+  document.body.appendChild(overlay);
+}
+
+async function _aplicarAtualizacoesTreino(overlay) {
+  const estados = {};
+  overlay.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    const ti = +cb.dataset.ti, ii = +cb.dataset.ii;
+    if (!estados[ti]) estados[ti] = {};
+    estados[ti][ii] = cb.checked;
+  });
+  overlay.remove();
+
+  const salvosList = [];
+  for (const [ti, treino] of _pendingUpdates.entries()) {
+    const est = estados[ti] || {};
+    if (!Object.values(est).some(Boolean)) continue;
+
+    const treinoNode = openTreinos[treino.fileName]?.node;
+    if (!treinoNode) continue;
+
+    // Marca temporariamente cada elemento para localização no clone
+    treino.items.forEach((item, ii) => {
+      if (item.type === 'add') {
+        item.element.dataset.uid = `u${ti}i${ii}`;
+      } else {
+        item.specs.forEach((spec, si) => { spec.element.dataset.uid = `u${ti}i${ii}s${si}`; });
+      }
+    });
+
+    const clone = treinoNode.cloneNode(true);
+
+    // Reverte itens desmarcados no clone
+    for (const [ii, item] of treino.items.entries()) {
+      if (est[ii] === false) {
+        if (item.type === 'add') {
+          clone.querySelector(`[data-uid="u${ti}i${ii}"]`)?.remove();
+        } else {
+          item.specs.forEach((spec, si) => {
+            const el = clone.querySelector(`[data-uid="u${ti}i${ii}s${si}"]`);
+            if (el) el.querySelector('.spec-value').textContent = spec.original;
+          });
+        }
+      }
+    }
+
+    // Remove marcações temporárias dos originais
+    treino.items.forEach(item => {
+      if (item.type === 'add') delete item.element.dataset.uid;
+      else item.specs.forEach(spec => delete spec.element.dataset.uid);
+    });
+
+    await salvarTreinoNoApp(treino.fileName, serializarTreinoParaMarkdown(clone));
+    salvosList.push(treino.title);
+  }
+
+  if (salvosList.length)
+    showToast(`Treino${salvosList.length > 1 ? 's' : ''} atualizado${salvosList.length > 1 ? 's' : ''}.`);
+  _concluirTreino();
+}
+
+function _concluirTreino() {
+  for (const key of Object.keys(openTreinos)) delete openTreinos[key];
+  currentTreino = null;
+  renderHome();
 }
