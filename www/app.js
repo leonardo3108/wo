@@ -32,25 +32,30 @@ function extractSpecs(content, equipment) {
 }
 
 function renderIntervals(lines, editMode = false) {
-  return lines
-    .filter(l => l.includes(' - '))
-    .map(line => {
-      const [phase, ...rest] = line.split(' - ');
-      return `<div class="interval-item"${editMode ? ' onclick="editIntervalItem(this)" style="cursor:pointer"' : ''}>
-        <div class="interval-header">${phase}</div>
-        <div class="interval-details">${rest.map(p => `<span>${p}</span>`).join('')}</div>
-      </div>`;
-    }).join('');
+  const filtered = lines.filter(l => l.trim());
+  if (editMode && !filtered.length) {
+    return `<div class="interval-empty" onclick="editIntervalBlock(this)">Toque para adicionar linhas</div>`;
+  }
+  return filtered.map(line => {
+    const [phase, ...rest] = line.split(' - ');
+    return `<div class="interval-item"${editMode ? ' onclick="editIntervalBlock(this)" style="cursor:pointer"' : ''}>
+      <div class="interval-header">${phase}</div>
+      ${rest.length ? `<div class="interval-details">${rest.map(p => `<span>${p}</span>`).join('')}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
-function renderWarmup(section, editMode = false) {
+function renderWarmup(section, editMode = false, icon = 'ti-flame') {
   const subs = section.content.filter(s => s.type === 'subsection');
-  return `<div class="section">
-    <div class="section-title"><i class="ti ti-flame"></i>${
-      editMode
-        ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>`
-        : section.title
-    }</div>
+  return `<div class="section" draggable="true">
+    <div class="section-title">
+      <i class="ti ti-grip-vertical section-drag-handle"></i>
+      <i class="ti ${icon}"></i>${
+        editMode
+          ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>
+             <button class="section-delete-btn" onclick="confirmarRemocaoSection(this)" title="Remover"><i class="ti ti-trash"></i></button>`
+          : section.title
+      }</div>
     ${subs.map(sub => `
       <div class="subsection">
         <div class="subsection-title">
@@ -91,10 +96,19 @@ function renderExercise(section, editMode = false) {
       <div class="exercise-icon"><i class="ti ${icon}"></i></div>
       <div${editMode ? ' style="flex:1;min-width:0"' : ''}>
         <div class="exercise-name"${editMode ? ' onclick="editInPlace(this)" style="cursor:pointer"' : ''}>${section.title}</div>
-        ${section.equipment ? `<div class="equipment"><a href="${section.equipment.url}" target="_blank">${section.equipment.name}</a></div>` : ''}
+        ${section.equipment
+          ? editMode
+            ? `<div class="equipment" data-url="${section.equipment.url.replace(/"/g,'&quot;')}">
+                <span class="equipment-name" onclick="editInPlace(this)" style="cursor:pointer">${section.equipment.name}</span>
+                <button class="equipment-url-btn" onclick="editEquipmentUrl(this)" title="Editar URL"><i class="ti ti-link"></i></button>
+               </div>`
+            : `<div class="equipment"><a href="${section.equipment.url}" target="_blank">${section.equipment.name}</a></div>`
+          : ''}
       </div>
-      ${!editMode ? `<button class="obs-btn" onclick="toggleObs(this)" title="Observações"><i class="ti ti-note"></i></button>
-      <button class="check-btn" onclick="toggleDone(this)" title="Marcar como feito"><i class="ti ti-check"></i></button>` : ''}
+      ${editMode
+        ? `<button class="exercise-delete-btn" onclick="confirmarRemocaoExercicio(this)" title="Remover exercício"><i class="ti ti-trash"></i></button>`
+        : `<button class="obs-btn" onclick="toggleObs(this)" title="Observações"><i class="ti ti-note"></i></button>
+           <button class="check-btn" onclick="toggleDone(this)" title="Marcar como feito"><i class="ti ti-check"></i></button>`}
     </div>
     ${specCells ? `<div class="specs">${specCells}</div>` : ''}
     ${!editMode ? `<textarea class="obs-input" placeholder="Observações..." rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>` : ''}
@@ -103,29 +117,35 @@ function renderExercise(section, editMode = false) {
 
 function renderStretching(section, editMode = false) {
   const items = section.content.filter(l => typeof l === 'string');
-  return `<div class="section">
-    <div class="section-title"><i class="ti ti-stretching"></i>${
-      editMode
-        ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>`
-        : section.title
-    }</div>
+  return `<div class="section" draggable="true">
+    <div class="section-title">
+      <i class="ti ti-grip-vertical section-drag-handle"></i>
+      <i class="ti ti-stretching"></i>${
+        editMode
+          ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>
+             <button class="section-delete-btn" onclick="confirmarRemocaoSection(this)" title="Remover"><i class="ti ti-trash"></i></button>`
+          : section.title
+      }</div>
     <div class="stretch-list">${items.map(i =>
       editMode
         ? `<div class="stretch-item"><span onclick="editInPlace(this)" style="cursor:pointer">${i}</span></div>`
         : `<div class="stretch-item" onclick="this.classList.toggle('done');this.querySelector('.check-btn-sm').classList.toggle('done')">${i}<button class="check-btn-sm" style="pointer-events:none"><i class="ti ti-check"></i></button></div>`
-    ).join('')}</div>
+    ).join('')}${editMode ? `<button class="add-line-btn" onclick="addStretchItem(this)"><i class="ti ti-plus"></i> Item</button>` : ''}</div>
   </div>`;
 }
 
 function renderPostWorkout(section, editMode = false) {
   const lines    = section.content.filter(l => typeof l === 'string');
   const subTitle = lines.find(l => !l.includes(' - ')) || section.title;
-  return `<div class="section">
-    <div class="section-title"><i class="ti ti-run"></i>${
-      editMode
-        ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>`
-        : section.title
-    }</div>
+  return `<div class="section" draggable="true">
+    <div class="section-title">
+      <i class="ti ti-grip-vertical section-drag-handle"></i>
+      <i class="ti ti-run"></i>${
+        editMode
+          ? `<span onclick="editInPlace(this)" style="cursor:pointer">${section.title}</span>
+             <button class="section-delete-btn" onclick="confirmarRemocaoSection(this)" title="Remover"><i class="ti ti-trash"></i></button>`
+          : section.title
+      }</div>
     <div class="subsection">
       <div class="subsection-title" style="margin-bottom:10px">
         <span class="sub-title-text"${editMode ? ' onclick="editInPlace(this)" style="cursor:pointer"' : ''}>${subTitle}</span>
@@ -164,8 +184,10 @@ function buildTreinoNode(title, subtitle, sections, fileName, editMode = false) 
       </div>`;
 
   const cards = [];
+  let hasExercisesSection = false;
   function flushCards() {
     if (cards.length) {
+      hasExercisesSection = true;
       html += `<div class="exercises-section">
         ${cards.join('')}
         <button class="add-exercise-btn" onclick="openAddModal(this)">
@@ -178,12 +200,22 @@ function buildTreinoNode(title, subtitle, sections, fileName, editMode = false) 
 
   for (const section of sections) {
     const key = section.title.toLowerCase();
-    if (key.includes('aquecimento'))      { flushCards(); html += renderWarmup(section, editMode); }
-    else if (key.includes('alongamento')) { flushCards(); html += renderStretching(section, editMode); }
-    else if (key.includes('pós-treino'))  { flushCards(); html += renderPostWorkout(section, editMode); }
+    if      (key.includes('desaquecimento')) { flushCards(); html += renderWarmup(section, editMode, 'ti-walk'); }
+    else if (key.includes('aquecimento'))    { flushCards(); html += renderWarmup(section, editMode, 'ti-flame'); }
+    else if (key.includes('desenvolvimento')){ flushCards(); html += renderWarmup(section, editMode, 'ti-run'); }
+    else if (key.includes('cárdio'))         { flushCards(); html += renderWarmup(section, editMode, 'ti-run'); }
+    else if (key.includes('pós-treino'))     { flushCards(); html += renderPostWorkout(section, editMode); }
+    else if (key.includes('alongamento'))    { flushCards(); html += renderStretching(section, editMode); }
     else { cards.push(renderExercise(section, editMode)); }
   }
   flushCards();
+  if (!hasExercisesSection) {
+    html += `<div class="exercises-section">
+      <button class="add-exercise-btn" onclick="openAddModal(this)">
+        <i class="ti ti-plus"></i> Adicionar exercício
+      </button>
+    </div>`;
+  }
 
   if (editMode) {
     html += `<div class="edit-bar">
@@ -201,6 +233,7 @@ function buildTreinoNode(title, subtitle, sections, fileName, editMode = false) 
 
   node.innerHTML = html;
   node.querySelectorAll('.exercises-section').forEach(s => initDragAndDrop(s));
+  initSectionDragAndDrop(node);
   return node;
 }
 
@@ -254,129 +287,318 @@ function render(md, fileName) {
 }
 
 let _targetSection = null;
+let _modalTipo = 'musculacao';
 
 function openAddModal(btn) {
   _targetSection = btn.closest('.exercises-section');
+  _modalTipo = 'musculacao';
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  _drawAddModal(overlay);
+}
+
+function _drawAddModal(overlay) {
+  const TIPOS = [
+    { id: 'musculacao',  icon: 'ti-barbell',   label: 'Musculação' },
+    { id: 'cardio',      icon: 'ti-run',        label: 'Cárdio' },
+    { id: 'alongamento', icon: 'ti-stretching', label: 'Alongamento' },
+  ];
+
+  const formHTML = _modalTipo === 'musculacao' ? `
+    <div class="modal-field">
+      <label>Nome</label>
+      <input id="m-name" type="text" placeholder="Ex: Leg Press">
+    </div>
+    <div class="modal-row">
+      <div class="modal-field" style="margin:0"><label>Séries</label><input id="m-series" type="text" placeholder="Ex: 3 x 12"></div>
+      <div class="modal-field" style="margin:0"><label>Carga (opcional)</label><input id="m-carga" type="text" placeholder="Ex: 40"></div>
+    </div>
+    <div class="modal-row">
+      <div class="modal-field" style="margin:0"><label>Regulagem (opcional)</label><input id="m-reg" type="text" placeholder="Ex: banco 6"></div>
+      <div class="modal-field" style="margin:0"><label>Localização (opcional)</label><input id="m-loc" type="text" placeholder="Ex: 8 NE"></div>
+    </div>
+    <div class="modal-field"><label>Equipamento (opcional)</label><input id="m-equip" type="text" placeholder="Ex: Leg Press Machine"></div>
+    <div class="modal-field"><label><i class="ti ti-link" style="font-size:13px;color:#1a56db;margin-right:4px"></i>URL (opcional)</label><input id="m-url" type="url" placeholder="https://..."></div>`
+  : _modalTipo === 'cardio' ? `
+    <div class="modal-field">
+      <label>Subtítulo</label>
+      <input id="c-subtitle" type="text" placeholder="Ex: Elíptico 8-12 min">
+    </div>
+    <div class="modal-field">
+      <label>Etapas <span style="font-weight:400;color:#8e8e93">(Fase - duração - zona/bpm)</span></label>
+      <textarea id="c-steps" rows="5" style="width:100%;font:inherit;font-size:14px;padding:8px;border:1.5px solid #e0e0e5;border-radius:8px;resize:vertical;box-sizing:border-box;margin-top:4px" placeholder="Aquecimento - 2 min - Zona 2 100-110 bpm&#10;Forte - 1,5 min - Zona 4 137-154 bpm&#10;Recuperação - 1,5 min - Zona 2 105-115 bpm&#10;Desaquecimento - 1 min - Zona 1 95-105 bpm"></textarea>
+    </div>` : `
+    <div class="modal-field">
+      <label>Alongamentos <span style="font-weight:400;color:#8e8e93">(um por linha)</span></label>
+      <textarea id="a-items" rows="5" style="width:100%;font:inherit;font-size:14px;padding:8px;border:1.5px solid #e0e0e5;border-radius:8px;resize:vertical;box-sizing:border-box;margin-top:4px" placeholder="Bíceps&#10;Tríceps&#10;Deltóides&#10;Dorsais"></textarea>
+    </div>`;
+
   overlay.innerHTML = `
     <div class="modal">
       <div class="modal-handle"></div>
-      <h3>Novo exercício</h3>
-      <div class="modal-field">
-        <label>Nome</label>
-        <input id="m-name" type="text" placeholder="Ex: Leg Press">
-      </div>
-      <div class="modal-row">
-        <div class="modal-field" style="margin:0">
-          <label>Séries</label>
-          <input id="m-series" type="text" placeholder="Ex: 3 x 12">
-        </div>
-        <div class="modal-field" style="margin:0">
-          <label>Carga (opcional)</label>
-          <input id="m-carga" type="text" placeholder="Ex: 40">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 style="margin:0">Nova atividade</h3>
+        <div class="pill-group">
+          ${TIPOS.map(t =>
+            `<button class="pill-btn${_modalTipo === t.id ? ' active' : ''}" data-tipo="${t.id}" title="${t.label}">
+              <i class="ti ${t.icon}"></i>
+            </button>`
+          ).join('')}
         </div>
       </div>
-      <div class="modal-row">
-        <div class="modal-field" style="margin:0">
-          <label>Regulagem (opcional)</label>
-          <input id="m-reg" type="text" placeholder="Ex: banco 6">
-        </div>
-        <div class="modal-field" style="margin:0">
-          <label>Localização (opcional)</label>
-          <input id="m-loc" type="text" placeholder="Ex: 8 NE">
-        </div>
-      </div>
-      <div class="modal-field">
-        <label>Equipamento (opcional)</label>
-        <input id="m-equip" type="text" placeholder="Ex: Leg Press Machine">
-      </div>
+      ${formHTML}
       <div class="modal-actions">
-        <button class="modal-cancel" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
-        <button class="modal-confirm" onclick="addExercise(this)">Adicionar</button>
+        <button class="modal-cancel">Cancelar</button>
+        <button class="modal-confirm">Adicionar</button>
       </div>
     </div>`;
-  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-  document.body.appendChild(overlay);
-  document.getElementById('m-name').focus();
+
+  overlay.querySelectorAll('[data-tipo]').forEach(btn =>
+    btn.addEventListener('click', () => { _modalTipo = btn.dataset.tipo; _drawAddModal(overlay); })
+  );
+  overlay.querySelector('.modal-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.modal-confirm').addEventListener('click', () => _addActivity(overlay));
+  setTimeout(() => overlay.querySelector('input, textarea')?.focus(), 50);
 }
 
-function addExercise(btn) {
-  const name   = document.getElementById('m-name').value.trim();
-  const series = document.getElementById('m-series').value.trim();
-  const carga  = document.getElementById('m-carga').value.trim();
-  const reg    = document.getElementById('m-reg').value.trim();
-  const loc    = document.getElementById('m-loc').value.trim();
-  const equip  = document.getElementById('m-equip').value.trim();
-  if (!name) { document.getElementById('m-name').focus(); return; }
+function _addActivity(overlay) {
+  const editMode = !!_treinoEditFileName;
 
-  const specCells = [
-    series ? `<div class="spec-item editable" onclick="editCarga(this)"><div class="spec-label">Séries</div><div class="spec-value">${series}</div></div>` : '',
-    loc    ? `<div class="spec-item"><div class="spec-label">Localização</div><div class="spec-value-sm">${loc}</div></div>` : '',
-    carga  ? `<div class="spec-item editable" onclick="editCarga(this)"><div class="spec-label">Carga</div><div class="spec-value">${carga}</div></div>`  : '',
-    reg    ? `<div class="spec-item"><div class="spec-label">Regulagem</div><div class="spec-value-sm">${reg}</div></div>` : '',
-  ].filter(Boolean).join('');
+  if (_modalTipo === 'musculacao') {
+    const name = document.getElementById('m-name').value.trim();
+    if (!name) { document.getElementById('m-name').focus(); return; }
+    const series = document.getElementById('m-series').value.trim();
+    const carga  = document.getElementById('m-carga').value.trim();
+    const reg    = document.getElementById('m-reg').value.trim();
+    const loc    = document.getElementById('m-loc').value.trim();
+    const equip  = document.getElementById('m-equip').value.trim();
+    const url    = document.getElementById('m-url').value.trim();
 
-  const card = document.createElement('div');
-  card.className = 'exercise-card';
-  card.setAttribute('draggable', 'true');
-  card.innerHTML = `
-    <div class="exercise-header">
-      <div class="drag-handle"><i class="ti ti-grip-vertical"></i></div>
-      <div class="exercise-icon"><i class="ti ti-barbell"></i></div>
-      <div>
-        <div class="exercise-name">${name}</div>
-        ${equip ? `<div class="equipment">${equip}</div>` : ''}
+    const specCells = editMode
+      ? [['Séries', series], ['Carga', carga], ['Regulagem', reg], ['Localização', loc]]
+          .map(([label, val]) =>
+            `<div class="spec-item editable" onclick="editCarga(this)"><div class="spec-label">${label}</div><div class="spec-value">${val}</div></div>`
+          ).join('')
+      : [
+          series ? `<div class="spec-item editable" onclick="editCarga(this)"><div class="spec-label">Séries</div><div class="spec-value">${series}</div></div>` : '',
+          loc    ? `<div class="spec-item"><div class="spec-label">Localização</div><div class="spec-value-sm">${loc}</div></div>` : '',
+          carga  ? `<div class="spec-item editable" onclick="editCarga(this)"><div class="spec-label">Carga</div><div class="spec-value">${carga}</div></div>` : '',
+          reg    ? `<div class="spec-item"><div class="spec-label">Regulagem</div><div class="spec-value-sm">${reg}</div></div>` : '',
+        ].filter(Boolean).join('');
+
+    const equipHTML = equip
+      ? editMode
+        ? `<div class="equipment" data-url="${url.replace(/"/g,'&quot;')}">
+             <span class="equipment-name" onclick="editInPlace(this)" style="cursor:pointer">${equip}</span>
+             <button class="equipment-url-btn" onclick="editEquipmentUrl(this)" title="Editar URL"><i class="ti ti-link"></i></button>
+           </div>`
+        : `<div class="equipment">${url ? `<a href="${url}" target="_blank">${equip}</a>` : equip}</div>`
+      : '';
+
+    const card = document.createElement('div');
+    card.className = 'exercise-card';
+    card.setAttribute('draggable', 'true');
+    card.innerHTML = `
+      <div class="exercise-header">
+        <div class="drag-handle"><i class="ti ti-grip-vertical"></i></div>
+        <div class="exercise-icon"><i class="ti ti-barbell"></i></div>
+        <div${editMode ? ' style="flex:1;min-width:0"' : ''}>
+          <div class="exercise-name"${editMode ? ' onclick="editInPlace(this)" style="cursor:pointer"' : ''}>${name}</div>
+          ${equipHTML}
+        </div>
+        ${editMode
+          ? `<button class="exercise-delete-btn" onclick="confirmarRemocaoExercicio(this)" title="Remover exercício"><i class="ti ti-trash"></i></button>`
+          : `<button class="obs-btn" onclick="toggleObs(this)" title="Observações"><i class="ti ti-note"></i></button>
+             <button class="check-btn" onclick="toggleDone(this)" title="Marcar como feito"><i class="ti ti-check"></i></button>`}
       </div>
-      <button class="obs-btn" onclick="toggleObs(this)" title="Observações">
-        <i class="ti ti-note"></i>
-      </button>
-      <button class="check-btn" onclick="toggleDone(this)" title="Marcar como feito">
-        <i class="ti ti-check"></i>
-      </button>
-    </div>
-    ${specCells ? `<div class="specs">${specCells}</div>` : ''}
-    <textarea class="obs-input" placeholder="Observações..." rows="1"
-      oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>`;
+      ${specCells ? `<div class="specs">${specCells}</div>` : ''}
+      ${!editMode ? `<textarea class="obs-input" placeholder="Observações..." rows="1"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>` : ''}`;
 
-  const ab = _targetSection.querySelector('.add-exercise-btn');
-  _targetSection.insertBefore(card, ab);
-  btn.closest('.modal-overlay').remove();
+    const ab = _targetSection.querySelector('.add-exercise-btn');
+    _targetSection.insertBefore(card, ab);
+    overlay.remove();
+    return;
+  }
+
+  if (_modalTipo === 'cardio') {
+    const subtitle = document.getElementById('c-subtitle').value.trim() || 'Cárdio';
+    const stepsRaw = document.getElementById('c-steps').value;
+    const steps = stepsRaw.split('\n').map(l => l.trim()).filter(Boolean);
+
+    const section = { title: 'Cárdio', content: [{ type: 'subsection', title: subtitle, content: steps }] };
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = renderWarmup(section, editMode, 'ti-run');
+    const sectionEl = wrapper.firstElementChild;
+    sectionEl.dataset.type = 'cardio';
+    _insertSectionInTreino(sectionEl);
+    overlay.remove();
+    return;
+  }
+
+  if (_modalTipo === 'alongamento') {
+    const itemsRaw = document.getElementById('a-items').value;
+    const items = itemsRaw.split('\n').map(l => l.trim()).filter(Boolean);
+
+    const section = { title: 'Alongamento', content: items };
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = renderStretching(section, editMode);
+    _insertSectionInTreino(wrapper.firstElementChild);
+    overlay.remove();
+  }
+}
+
+function _insertSectionInTreino(sectionEl) {
+  const treinoContent = _targetSection.closest('.treino-content');
+  const editBar = treinoContent.querySelector('.edit-bar');
+  if (editBar) treinoContent.insertBefore(sectionEl, editBar);
+  else treinoContent.appendChild(sectionEl);
+}
+
+function _moveSection(container, dragged, target) {
+  const siblings = [...container.children].filter(c =>
+    c.classList.contains('section') || c.classList.contains('exercises-section')
+  );
+  if (siblings.indexOf(dragged) < siblings.indexOf(target)) target.after(dragged);
+  else target.before(dragged);
+}
+
+function initSectionDragAndDrop(container) {
+  let dragged = null;
+
+  // ── Desktop: HTML5 drag, só a partir do handle ─────────────────
+  container.addEventListener('dragstart', e => {
+    if (!e.target.closest('.section-drag-handle')) { e.preventDefault(); return; }
+    dragged = e.target.closest('.section');
+    if (!dragged) return;
+    setTimeout(() => dragged.classList.add('dragging'), 0);
+  });
+  container.addEventListener('dragend', () => {
+    if (dragged) { dragged.classList.remove('dragging'); dragged = null; }
+    container.querySelectorAll('.section').forEach(s => s.classList.remove('drag-over'));
+  });
+  container.addEventListener('dragover', e => {
+    if (!dragged) return;
+    const target = e.target.closest('.section');
+    if (!target || target === dragged || !container.contains(target)) return;
+    e.preventDefault();
+    container.querySelectorAll('.section').forEach(s => s.classList.remove('drag-over'));
+    target.classList.add('drag-over');
+  });
+  container.addEventListener('drop', e => {
+    if (!dragged) return;
+    const target = e.target.closest('.section');
+    if (!target || target === dragged || !container.contains(target)) return;
+    e.preventDefault();
+    target.classList.remove('drag-over');
+    _moveSection(container, dragged, target);
+    dragged = null;
+  });
+
+  // ── Mobile: touch drag, só a partir do handle ──────────────────
+  container.addEventListener('touchstart', e => {
+    if (!e.target.closest('.section-drag-handle')) return;
+    dragged = e.target.closest('.section');
+    if (!dragged) return;
+    e.preventDefault();
+    dragged.classList.add('dragging');
+  }, { passive: false });
+
+  container.addEventListener('touchmove', e => {
+    if (!dragged) return;
+    e.preventDefault();
+    const { clientX, clientY } = e.touches[0];
+    dragged.style.display = 'none';
+    const below = document.elementFromPoint(clientX, clientY);
+    dragged.style.display = '';
+    const target = below?.closest('.section');
+    container.querySelectorAll('.section').forEach(s => s.classList.remove('drag-over'));
+    if (target && target !== dragged && container.contains(target))
+      target.classList.add('drag-over');
+  }, { passive: false });
+
+  container.addEventListener('touchend', () => {
+    if (!dragged) return;
+    const target = container.querySelector('.section.drag-over');
+    if (target) _moveSection(container, dragged, target);
+    dragged.classList.remove('dragging');
+    container.querySelectorAll('.section').forEach(s => s.classList.remove('drag-over'));
+    dragged = null;
+  });
+}
+
+function _moveCard(section, dragged, target) {
+  const cards = [...section.querySelectorAll('.exercise-card')];
+  if (cards.indexOf(dragged) < cards.indexOf(target)) target.after(dragged);
+  else target.before(dragged);
 }
 
 function initDragAndDrop(section) {
   let dragged = null;
 
+  // ── Desktop: HTML5 drag, só a partir do handle ─────────────────
   section.addEventListener('dragstart', e => {
+    if (!e.target.closest('.drag-handle')) { e.preventDefault(); return; }
     dragged = e.target.closest('.exercise-card');
     if (!dragged) return;
     setTimeout(() => dragged.classList.add('dragging'), 0);
   });
 
   section.addEventListener('dragend', () => {
-    if (dragged) dragged.classList.remove('dragging');
+    if (dragged) { dragged.classList.remove('dragging'); dragged = null; }
     section.querySelectorAll('.exercise-card').forEach(c => c.classList.remove('drag-over'));
-    dragged = null;
   });
 
   section.addEventListener('dragover', e => {
-    e.preventDefault();
+    if (!dragged) return;
     const target = e.target.closest('.exercise-card');
     if (!target || target === dragged) return;
+    e.preventDefault();
     section.querySelectorAll('.exercise-card').forEach(c => c.classList.remove('drag-over'));
     target.classList.add('drag-over');
   });
 
   section.addEventListener('drop', e => {
-    e.preventDefault();
+    if (!dragged) return;
     const target = e.target.closest('.exercise-card');
     if (!target || target === dragged) return;
+    e.preventDefault();
     target.classList.remove('drag-over');
-    const cards = [...section.querySelectorAll('.exercise-card')];
-    const draggedIdx = cards.indexOf(dragged);
-    const targetIdx  = cards.indexOf(target);
-    if (draggedIdx < targetIdx) target.after(dragged);
-    else target.before(dragged);
+    _moveCard(section, dragged, target);
+    dragged = null;
+  });
+
+  // ── Mobile: touch drag, só a partir do handle ──────────────────
+  section.addEventListener('touchstart', e => {
+    if (!e.target.closest('.drag-handle')) return;
+    dragged = e.target.closest('.exercise-card');
+    if (!dragged) return;
+    e.preventDefault();
+    dragged.classList.add('dragging');
+  }, { passive: false });
+
+  section.addEventListener('touchmove', e => {
+    if (!dragged) return;
+    e.preventDefault();
+    const { clientX, clientY } = e.touches[0];
+    dragged.style.display = 'none';
+    const below = document.elementFromPoint(clientX, clientY);
+    dragged.style.display = '';
+    const target = below?.closest('.exercise-card');
+    section.querySelectorAll('.exercise-card').forEach(c => c.classList.remove('drag-over'));
+    if (target && target !== dragged && section.contains(target))
+      target.classList.add('drag-over');
+  }, { passive: false });
+
+  section.addEventListener('touchend', () => {
+    if (!dragged) return;
+    const target = section.querySelector('.exercise-card.drag-over');
+    if (target) _moveCard(section, dragged, target);
+    dragged.classList.remove('dragging');
+    section.querySelectorAll('.exercise-card').forEach(c => c.classList.remove('drag-over'));
+    dragged = null;
   });
 }
 
@@ -445,6 +667,60 @@ function editCarga(item) {
     if (e.key === 'Enter') input.blur();
     if (e.key === 'Escape') { valueEl.textContent = current; done(); }
   });
+}
+
+function confirmarRemocaoExercicio(btn) {
+  const card = btn.closest('.exercise-card');
+  const name = card.querySelector('.exercise-name')?.textContent.trim() || 'este exercício';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Remover exercício?</h3>
+      <p style="font-size:14px;color:#636366;margin:8px 0 16px">${name}</p>
+      <div class="modal-actions">
+        <button class="modal-cancel">Cancelar</button>
+        <button class="modal-danger">Remover</button>
+      </div>
+    </div>`;
+  overlay.querySelector('.modal-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.modal-danger').addEventListener('click', () => {
+    card.remove();
+    overlay.remove();
+    if (_treinoEditFileName) _treinoPodeCompartilhar = false;
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function editEquipmentUrl(btn) {
+  const equipDiv = btn.closest('.equipment');
+  const currentUrl = equipDiv.dataset.url || '';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>URL do equipamento</h3>
+      <div class="modal-field">
+        <label>Link</label>
+        <input id="equip-url-input" type="url" value="${currentUrl.replace(/"/g,'&quot;')}" placeholder="https://...">
+      </div>
+      <div class="modal-actions">
+        <button class="modal-cancel">Cancelar</button>
+        <button class="modal-confirm">OK</button>
+      </div>
+    </div>`;
+  overlay.querySelector('.modal-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.modal-confirm').addEventListener('click', () => {
+    equipDiv.dataset.url = overlay.querySelector('#equip-url-input').value.trim();
+    overlay.remove();
+    if (_treinoEditFileName) _treinoPodeCompartilhar = false;
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  setTimeout(() => overlay.querySelector('#equip-url-input')?.focus(), 50);
 }
 
 function showToast(msg, duration = 2200) {

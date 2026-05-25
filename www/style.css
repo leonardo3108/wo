@@ -245,6 +245,50 @@ body {
 .obs-input::placeholder { color: #b0b0b5; }
 .exercise-card.dragging { opacity: .35; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
 .exercise-card.drag-over { border-color: #1a56db; background: #f0f5ff; }
+.section.dragging { opacity: .35; }
+.section.drag-over { outline: 2px dashed #1a56db; border-radius: 10px; background: #f0f5ff; }
+.section-drag-handle { color: #c7c7cc; margin-right: 2px; cursor: grab; }
+.section-delete-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #fff0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: opacity .15s;
+}
+.section-delete-btn:hover { opacity: .8; }
+.section-title .section-delete-btn i { color: #ff3b30; font-size: 15px; }
+.interval-empty {
+  color: #c7c7cc;
+  font-size: 13px;
+  font-style: italic;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+.interval-empty:hover { color: #8e8e93; }
+
+.add-line-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border: 1.5px dashed #c7c7cc;
+  border-radius: 8px;
+  background: none;
+  font-size: 13px;
+  font-family: inherit;
+  color: #8e8e93;
+  cursor: pointer;
+  width: 100%;
+}
+.add-line-btn:hover { border-color: #1a56db; color: #1a56db; }
 
 .drag-handle {
   display: flex;
@@ -283,6 +327,35 @@ body {
 }
 .spec-value { font-size: 16px; font-weight: 600; color: #1c1c1e; }
 .spec-value-sm { font-size: 13px; font-weight: 500; color: #1c1c1e; }
+
+.exercise-delete-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #fff0f0;
+  color: #ff3b30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 16px;
+  transition: opacity .15s;
+}
+.exercise-delete-btn:hover { opacity: .8; }
+
+.equipment-url-btn {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  color: #1a56db;
+  cursor: pointer;
+  font-size: 13px;
+  vertical-align: middle;
+  opacity: .75;
+}
+.equipment-url-btn:hover { opacity: 1; }
 
 .spec-item.editable { cursor: pointer; }
 .spec-item.editable:hover { background: #e8f0fe; }

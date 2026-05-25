@@ -214,7 +214,8 @@ async function verTreinos() {
       ${names.length
         ? `<div class="registros-list">${itemsHTML}</div>`
         : `<div style="padding:2rem;text-align:center;color:#636366">Nenhum treino salvo</div>`}
-      <div style="padding:1.5rem 1rem 1rem">
+      <div style="padding:1.5rem 1rem 1rem;display:flex;flex-direction:column;gap:8px">
+        <button class="registros-btn" onclick="novoTreino()"><i class="ti ti-plus"></i> Novo treino</button>
         <label class="registros-btn" style="font-family:inherit;display:flex;box-sizing:border-box">
           <i class="ti ti-folder-open"></i> Abrir treino
           <input type="file" accept=".md,text/markdown,text/plain" onchange="loadFile(this.files[0])" style="display:none">
@@ -381,6 +382,108 @@ function editSubtitulo(el) {
   draw();
 }
 
+function confirmarRemocaoSection(btn) {
+  const section = btn.closest('.section');
+  const name = section.querySelector('.section-title span')?.textContent.trim()
+            || section.querySelector('.section-title')?.textContent.trim()
+            || 'esta atividade';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Remover atividade?</h3>
+      <p style="font-size:14px;color:#636366;margin:8px 0 16px">${name}</p>
+      <div class="modal-actions">
+        <button class="modal-cancel">Cancelar</button>
+        <button class="modal-danger">Remover</button>
+      </div>
+    </div>`;
+  overlay.querySelector('.modal-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.modal-danger').addEventListener('click', () => {
+    section.remove();
+    overlay.remove();
+    if (_treinoEditFileName) _treinoPodeCompartilhar = false;
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function editIntervalBlock(el) {
+  const sub = el.closest('.subsection');
+  if (!sub) return;
+
+  const items = [...sub.querySelectorAll('.interval-item')];
+  const current = items.map(item => {
+    const phase   = item.querySelector('.interval-header')?.textContent.trim() || '';
+    const details = [...item.querySelectorAll('.interval-details span')].map(s => s.textContent.trim());
+    return [phase, ...details].filter(Boolean).join(' - ');
+  }).join('\n');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Editar linhas</h3>
+      <p style="font-size:13px;color:#8e8e93;margin:4px 0 12px">Uma por linha. Use " - " para separar fase, duração, zona/bpm...</p>
+      <textarea id="interval-ta" rows="8" style="width:100%;font:inherit;font-size:14px;padding:8px;border:1.5px solid #e0e0e5;border-radius:8px;resize:vertical;box-sizing:border-box">${current}</textarea>
+      <div class="modal-actions" style="margin-top:12px">
+        <button class="modal-cancel">Cancelar</button>
+        <button class="modal-confirm">OK</button>
+      </div>
+    </div>`;
+
+  overlay.querySelector('.modal-cancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  overlay.querySelector('.modal-confirm').addEventListener('click', () => {
+    const lines = overlay.querySelector('#interval-ta').value
+      .split('\n').map(l => l.trim()).filter(Boolean);
+
+    // remove itens existentes
+    items.forEach(i => i.remove());
+
+    // insere novos antes do botão "+ Linha"
+    const addBtn = sub.querySelector('.add-line-btn');
+    for (const line of lines) {
+      const [phase, ...rest] = line.split(' - ');
+      const item = document.createElement('div');
+      item.className = 'interval-item';
+      item.setAttribute('onclick', 'editIntervalBlock(this)');
+      item.style.cursor = 'pointer';
+      item.innerHTML = `<div class="interval-header">${phase}</div>`
+        + (rest.length ? `<div class="interval-details">${rest.map(p => `<span>${p}</span>`).join('')}</div>` : '');
+      if (addBtn) sub.insertBefore(item, addBtn);
+      else sub.appendChild(item);
+    }
+
+    overlay.remove();
+    if (_treinoEditFileName) _treinoPodeCompartilhar = false;
+  });
+
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    const ta = overlay.querySelector('#interval-ta');
+    ta?.focus();
+    ta?.setSelectionRange(ta.value.length, ta.value.length);
+  }, 50);
+}
+
+function addStretchItem(btn) {
+  const list = btn.closest('.stretch-list');
+  const item = document.createElement('div');
+  item.className = 'stretch-item';
+  const span = document.createElement('span');
+  span.setAttribute('onclick', 'editInPlace(this)');
+  span.style.cursor = 'pointer';
+  span.textContent = 'Novo item';
+  item.appendChild(span);
+  list.insertBefore(item, btn);
+  editInPlace(span);
+  if (_treinoEditFileName) _treinoPodeCompartilhar = false;
+}
+
 function editInPlace(el) {
   if (el.querySelector('input')) return;
   const current = el.textContent.trim();
@@ -402,34 +505,6 @@ function editInPlace(el) {
   });
 }
 
-function editIntervalItem(item) {
-  if (item.querySelector('input')) return;
-  const phase   = item.querySelector('.interval-header')?.textContent.trim() || '';
-  const details = [...item.querySelectorAll('.interval-details span')].map(s => s.textContent.trim());
-  const current = [phase, ...details].join(' - ');
-
-  item.innerHTML = '';
-  const input = document.createElement('input');
-  input.value = current;
-  input.style.cssText = 'font:inherit;font-size:14px;background:transparent;border:none;border-bottom:2px solid #1a56db;outline:none;width:100%;padding:4px 0;color:inherit;';
-  item.appendChild(input);
-  input.focus();
-  input.select();
-
-  function restore(val) {
-    const [p, ...r] = val.split(' - ');
-    item.innerHTML = `<div class="interval-header">${p}</div><div class="interval-details">${r.map(x => `<span>${x}</span>`).join('')}</div>`;
-  }
-  function save() {
-    restore(input.value.trim() || current);
-    if (_treinoEditFileName) _treinoPodeCompartilhar = false;
-  }
-  input.addEventListener('blur', save);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') input.blur();
-    if (e.key === 'Escape') { restore(current); }
-  });
-}
 
 function serializarTreinoParaMarkdown(node) {
   const lines = [];
@@ -441,8 +516,79 @@ function serializarTreinoParaMarkdown(node) {
   const subtitle   = subtitleEl?.textContent.trim();
   if (subtitle && !subtitle.includes('adicionar subtítulo')) lines.push(subtitle, '');
 
-  for (const child of node.children) {
-    if (child.classList.contains('header') || child.classList.contains('edit-bar')) continue;
+  const isAerobic = (subtitle || '').startsWith('Aeróbico');
+
+  // Filtra header e edit-bar para processar apenas o conteúdo
+  const children = [...node.children].filter(c =>
+    !c.classList.contains('header') && !c.classList.contains('edit-bar')
+  );
+
+  // Verifica se uma section de exercícios tem cards
+  function hasCards(el) {
+    return el.classList.contains('exercises-section') &&
+           el.querySelectorAll('.exercise-card').length > 0;
+  }
+
+  // Determina título de seção cárdio (musculação/misto): posição relativa aos exercícios
+  function getCardioTitle(idx) {
+    const before = children.slice(0, idx).some(hasCards);
+    const after  = children.slice(idx + 1).some(hasCards);
+    if (!before) return 'Aquecimento';
+    if (!after)  return 'Pós-Treino';
+    return 'Cárdio';
+  }
+
+  // Pré-computação para treinos aeróbicos: índice de cada grupo de cárdio
+  const _cardioGroupStarts = [];
+  if (isAerobic) {
+    let k = 0;
+    while (k < children.length) {
+      if (children[k].dataset?.type === 'cardio') {
+        _cardioGroupStarts.push(k);
+        while (k < children.length && children[k].dataset?.type === 'cardio') k++;
+      } else k++;
+    }
+  }
+
+  // Aquecimento → Desenvolvimento → Desaquecimento
+  function getAerobicCardioTitle(startIdx) {
+    const n     = _cardioGroupStarts.indexOf(startIdx);
+    const total = _cardioGroupStarts.length;
+    if (n === 0) return 'Aquecimento';
+    if (n === total - 1 && total > 1) return 'Desaquecimento';
+    return 'Desenvolvimento';
+  }
+
+  // Serializa os intervalos de uma subsection
+  function serializeSubsection(sub) {
+    const subTitle = sub.querySelector('.sub-title-text')?.textContent.trim();
+    if (subTitle) lines.push(`### ${subTitle}`);
+    for (const interval of sub.querySelectorAll('.interval-item')) {
+      const p = interval.querySelector('.interval-header')?.textContent.trim();
+      const r = [...interval.querySelectorAll('.interval-details span')].map(s => s.textContent.trim());
+      if (p) lines.push([p, ...r].filter(Boolean).join(' - '));
+    }
+    lines.push('');
+  }
+
+  let i = 0;
+  while (i < children.length) {
+    const child = children[i];
+
+    // Seções de cárdio adicionadas via modal (data-type="cardio")
+    // Seções adjacentes são agrupadas sob um único ## com subsections ###
+    if (child.dataset?.type === 'cardio') {
+      const startIdx = i;
+      const group = [];
+      while (i < children.length && children[i].dataset?.type === 'cardio') {
+        group.push(children[i]);
+        i++;
+      }
+      const cardioLabel = isAerobic ? getAerobicCardioTitle(startIdx) : getCardioTitle(startIdx);
+      lines.push(`## ${cardioLabel}`, '');
+      group.forEach(cardio => cardio.querySelectorAll('.subsection').forEach(serializeSubsection));
+      continue;
+    }
 
     if (child.classList.contains('section')) {
       const secTitle = child.querySelector('.section-title')?.textContent.trim() || '';
@@ -456,24 +602,15 @@ function serializarTreinoParaMarkdown(node) {
         }
         lines.push('');
       } else {
-        for (const sub of child.querySelectorAll('.subsection')) {
-          const subTitle = sub.querySelector('.sub-title-text')?.textContent.trim();
-          if (subTitle) lines.push(`### ${subTitle}`);
-          for (const interval of sub.querySelectorAll('.interval-item')) {
-            const p = interval.querySelector('.interval-header')?.textContent.trim();
-            const r = [...interval.querySelectorAll('.interval-details span')].map(s => s.textContent.trim());
-            if (p) lines.push([p, ...r].filter(Boolean).join(' - '));
-          }
-          lines.push('');
-        }
+        child.querySelectorAll('.subsection').forEach(serializeSubsection);
       }
     }
 
     if (child.classList.contains('exercises-section')) {
       for (const card of child.querySelectorAll('.exercise-card')) {
-        const name = card.querySelector('.exercise-name')?.textContent.trim();
-        if (!name) continue;
-        lines.push(`## ${name}`);
+        const exerciseName = card.querySelector('.exercise-name')?.textContent.trim();
+        if (!exerciseName) continue;
+        lines.push(`## ${exerciseName}`);
 
         const specMap = {};
         for (const specItem of card.querySelectorAll('.spec-item')) {
@@ -482,10 +619,13 @@ function serializarTreinoParaMarkdown(node) {
           if (label && value) specMap[label] = value;
         }
 
-        const equipLink = card.querySelector('.equipment a');
-        if (equipLink) {
-          const loc = specMap['Localização'] || '';
-          lines.push(`[${equipLink.textContent.trim()}](${equipLink.href})${loc ? ` ${loc}` : ''}`);
+        const equipDiv = card.querySelector('.equipment');
+        if (equipDiv) {
+          const nameEl   = equipDiv.querySelector('.equipment-name') ?? equipDiv.querySelector('a');
+          const equipName = nameEl?.textContent.trim() || '';
+          const url       = equipDiv.dataset.url ?? equipDiv.querySelector('a')?.href ?? '';
+          const loc       = specMap['Localização'] || '';
+          if (equipName) lines.push(`[${equipName}](${url})${loc ? ` ${loc}` : ''}`);
         }
 
         if (specMap['Séries'])    lines.push(specMap['Séries']);
@@ -495,6 +635,8 @@ function serializarTreinoParaMarkdown(node) {
         lines.push('');
       }
     }
+
+    i++;
   }
 
   return lines.join('\n').trimEnd();
@@ -587,6 +729,55 @@ async function confirmarDuplicacao(btn) {
     showToast('Treino duplicado.');
   } catch(e) {
     alert('Erro ao duplicar: ' + (e.message || e));
+  }
+}
+
+// --- Novo treino ---
+
+function novoTreino() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <h3>Novo treino</h3>
+      <div class="modal-field">
+        <label>Título</label>
+        <input id="novo-titulo" type="text" placeholder="Ex: Treino A Léo">
+      </div>
+      <div class="modal-actions">
+        <button class="modal-cancel">Cancelar</button>
+        <button class="modal-confirm">Criar</button>
+      </div>
+    </div>`;
+  overlay.querySelector('.modal-cancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('.modal-confirm').addEventListener('click', () => criarNovoTreino(overlay));
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('novo-titulo')?.focus(), 50);
+}
+
+async function criarNovoTreino(overlay) {
+  const input = document.getElementById('novo-titulo');
+  const title = input.value.trim();
+  if (!title) { input.focus(); return; }
+
+  const fileName = `${title}.md`;
+  const existe = await treinoExisteNoApp(fileName);
+  if (existe) {
+    input.style.boxShadow = '0 0 0 2px #ff3b30';
+    input.value = '';
+    input.placeholder = 'Já existe um treino com este título';
+    input.focus();
+    return;
+  }
+
+  try {
+    await salvarTreinoNoApp(fileName, `# ${title}\n`);
+    overlay.remove();
+    editarTreino(fileName);
+  } catch(e) {
+    alert('Erro ao criar treino: ' + (e.message || e));
   }
 }
 
