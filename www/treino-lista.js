@@ -28,16 +28,37 @@ function _confirmarSubstituicao(fileName) {
   });
 }
 
+// Lógica comum: lê o arquivo, confirma substituição se necessário,
+// salva no app e atualiza o cache de tipo. Retorna o conteúdo ou null se cancelado.
+async function _salvarNaBiblioteca(file) {
+  const content = await _lerArquivoComoTexto(file);
+  const existe  = await treinoExisteNoApp(file.name);
+  if (existe) {
+    const confirmar = await _confirmarSubstituicao(file.name);
+    if (!confirmar) return null;
+  }
+  await salvarTreinoNoApp(file.name, content);
+  const { subtitle } = parseMarkdown(content);
+  _setTreinoTipo(file.name, _tipoFromSubtitle(subtitle));
+  return content;
+}
+
+// Importa para a biblioteca e permanece na tela de Treinos
+async function importarTreino(file) {
+  if (!window.Capacitor?.isNativePlatform?.()) { loadFile(file); return; }
+  try {
+    const content = await _salvarNaBiblioteca(file);
+    if (content !== null) { showToast('Treino importado.'); verTreinos(); }
+  } catch(e) { alert('Erro ao importar: ' + (e.message || e)); }
+}
+
+// Importa para a biblioteca e abre para execução
 async function loadFile(file) {
   if (window.Capacitor?.isNativePlatform?.()) {
-    const content = await _lerArquivoComoTexto(file);
-    const existe = await treinoExisteNoApp(file.name);
-    if (existe) {
-      const confirmar = await _confirmarSubstituicao(file.name);
-      if (!confirmar) return;
-    }
-    await salvarTreinoNoApp(file.name, content);
-    render(content, file.name);
+    try {
+      const content = await _salvarNaBiblioteca(file);
+      if (content !== null) render(content, file.name);
+    } catch(e) { alert('Erro ao abrir: ' + (e.message || e)); }
   } else {
     saveRecent(file);
     const reader = new FileReader();
@@ -108,6 +129,10 @@ async function verTreinos() {
         : `<div style="padding:2rem;text-align:center;color:#636366">Nenhum treino salvo</div>`}
       <div style="padding:1.5rem 1rem 1rem;display:flex;flex-direction:column;gap:8px">
         <button class="registros-btn" onclick="novoTreino()"><i class="ti ti-plus"></i> Novo treino</button>
+        <label class="registros-btn" style="font-family:inherit;display:flex;box-sizing:border-box">
+          <i class="ti ti-file-import"></i> Importar treino
+          <input type="file" accept=".md,text/markdown,text/plain" onchange="importarTreino(this.files[0])" style="display:none">
+        </label>
         <label class="registros-btn" style="font-family:inherit;display:flex;box-sizing:border-box">
           <i class="ti ti-folder-open"></i> Abrir treino
           <input type="file" accept=".md,text/markdown,text/plain" onchange="loadFile(this.files[0])" style="display:none">
