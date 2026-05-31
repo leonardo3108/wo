@@ -76,6 +76,18 @@ The `.md` workout files live on your device (local storage, iCloud, Google Drive
 
 ---
 
+## Build
+
+The APK is built automatically via GitHub Actions on every push to `main`. To download:
+
+1. Go to the **Actions** tab on GitHub
+2. Open the latest **Build APK Debug** run
+3. Download the `wo-debug` artifact — it contains `wo-debug.apk`
+
+You can also trigger a build manually from the Actions tab using **Run workflow**.
+
+---
+
 ## Install as app
 
 ### Android (native app)
