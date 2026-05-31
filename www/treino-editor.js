@@ -15,85 +15,92 @@ async function editarTreino(fileName) {
   app.appendChild(node);
 }
 
-function editSubtitulo(el) {
-  const TIPOS    = ['Musculação', 'Aeróbico', 'Outros'];
-  const SUBTIPOS = ['Parte superior', 'Parte inferior', 'Completa'];
+// Retorna Promise<string|null> — null se o usuário cancelar.
+function _subtituloModal(current) {
+  return new Promise(resolve => {
+    const TIPOS    = ['Musculação', 'Aeróbico', 'Outros'];
+    const SUBTIPOS = ['Parte superior', 'Parte inferior', 'Completa'];
 
-  let tipo = 'Musculação', subtipo = '';
-  const raw = el.textContent.trim();
-  if (!raw.includes('adicionar subtítulo')) {
-    const sep = raw.indexOf(' - ');
-    if (sep !== -1) {
-      const t = raw.slice(0, sep);
-      if (TIPOS.includes(t)) { tipo = t; subtipo = raw.slice(sep + 3); }
-    } else if (TIPOS.includes(raw)) {
-      tipo = raw;
+    let tipo = 'Musculação', subtipo = '';
+    if (current && !current.includes('adicionar subtítulo')) {
+      const sep = current.indexOf(' - ');
+      if (sep !== -1) {
+        const t = current.slice(0, sep);
+        if (TIPOS.includes(t)) { tipo = t; subtipo = current.slice(sep + 3); }
+      } else if (TIPOS.includes(current)) {
+        tipo = current;
+      }
     }
-  }
 
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  document.body.appendChild(overlay);
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    document.body.appendChild(overlay);
 
-  function draw() {
-    const isFree = tipo !== 'Musculação';
-    overlay.innerHTML = `
-      <div class="modal">
-        <div class="modal-handle"></div>
-        <h3>Tipo de treino</h3>
-        <div class="modal-field">
-          <label>Tipo</label>
-          <div class="pill-group">
-            ${TIPOS.map(t =>
-              `<button class="pill-btn${tipo === t ? ' active' : ''}" data-tipo="${t}">${t}</button>`
-            ).join('')}
+    function draw() {
+      const isFree = tipo !== 'Musculação';
+      overlay.innerHTML = `
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <h3>Tipo de treino</h3>
+          <div class="modal-field">
+            <label>Tipo</label>
+            <div class="pill-group">
+              ${TIPOS.map(t =>
+                `<button class="pill-btn${tipo === t ? ' active' : ''}" data-tipo="${t}">${t}</button>`
+              ).join('')}
+            </div>
           </div>
-        </div>
-        ${!isFree ? `
-        <div class="modal-field">
-          <label>Parte do corpo</label>
-          <div class="pill-group">
-            ${SUBTIPOS.map(s =>
-              `<button class="pill-btn${subtipo === s ? ' active' : ''}" data-sub="${s}">${s}</button>`
-            ).join('')}
+          ${!isFree ? `
+          <div class="modal-field">
+            <label>Parte do corpo</label>
+            <div class="pill-group">
+              ${SUBTIPOS.map(s =>
+                `<button class="pill-btn${subtipo === s ? ' active' : ''}" data-sub="${s}">${s}</button>`
+              ).join('')}
+            </div>
+          </div>` : `
+          <div class="modal-field">
+            <label>Descrição <span style="font-weight:400;color:#8e8e93">(opcional)</span></label>
+            <input id="sub-input" type="text" value="${subtipo}"
+              placeholder="${tipo === 'Aeróbico' ? 'Ex: Corrida, Natação...' : 'Ex: Yoga, Pilates...'}">
+          </div>`}
+          <div class="modal-actions">
+            <button class="modal-cancel">Cancelar</button>
+            <button class="modal-confirm">OK</button>
           </div>
-        </div>` : `
-        <div class="modal-field">
-          <label>Descrição <span style="font-weight:400;color:#8e8e93">(opcional)</span></label>
-          <input id="sub-input" type="text" value="${subtipo}"
-            placeholder="${tipo === 'Aeróbico' ? 'Ex: Corrida, Natação...' : 'Ex: Yoga, Pilates...'}">
-        </div>`}
-        <div class="modal-actions">
-          <button class="modal-cancel">Cancelar</button>
-          <button class="modal-confirm">OK</button>
-        </div>
-      </div>`;
+        </div>`;
 
-    overlay.querySelectorAll('[data-tipo]').forEach(btn => btn.addEventListener('click', () => {
-      tipo = btn.dataset.tipo;
-      subtipo = '';
-      draw();
-    }));
-    overlay.querySelectorAll('[data-sub]').forEach(btn => btn.addEventListener('click', () => {
-      subtipo = btn.dataset.sub;
-      draw();
-    }));
+      overlay.querySelectorAll('[data-tipo]').forEach(btn => btn.addEventListener('click', () => {
+        tipo = btn.dataset.tipo; subtipo = ''; draw();
+      }));
+      overlay.querySelectorAll('[data-sub]').forEach(btn => btn.addEventListener('click', () => {
+        subtipo = btn.dataset.sub; draw();
+      }));
 
-    overlay.querySelector('.modal-cancel').addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+      overlay.querySelector('.modal-cancel').addEventListener('click', () => { overlay.remove(); resolve(null); });
+      overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(null); } });
 
-    overlay.querySelector('.modal-confirm').addEventListener('click', () => {
-      if (isFree) subtipo = overlay.querySelector('#sub-input')?.value.trim() || '';
-      el.textContent = subtipo ? `${tipo} - ${subtipo}` : tipo;
+      overlay.querySelector('.modal-confirm').addEventListener('click', () => {
+        if (isFree) subtipo = overlay.querySelector('#sub-input')?.value.trim() || '';
+        overlay.remove();
+        resolve(subtipo ? `${tipo} - ${subtipo}` : tipo);
+      });
+
+      if (isFree) setTimeout(() => overlay.querySelector('#sub-input')?.focus(), 50);
+    }
+
+    draw();
+  });
+}
+
+function editSubtitulo(el) {
+  _subtituloModal(el.textContent.trim()).then(result => {
+    if (result !== null) {
+      el.textContent = result;
       el.style.opacity = '';
-      overlay.remove();
       if (_treinoEditFileName) _treinoPodeCompartilhar = false;
-    });
-
-    if (isFree) setTimeout(() => overlay.querySelector('#sub-input')?.focus(), 50);
-  }
-
-  draw();
+    }
+  });
 }
 
 function confirmarRemocaoSection(btn) {
