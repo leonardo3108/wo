@@ -120,6 +120,7 @@ function coletarAjustes(node) {
 }
 
 let _pendingUpdates = [];
+let _registroSalvo  = null; // { fileName, texto } — preenchido após salvar
 
 async function registrar() {
   const now  = new Date();
@@ -191,6 +192,7 @@ async function registrar() {
         recursive: true,
       });
       showToast(`Salvo: ${fileName}`);
+      _registroSalvo  = { fileName, texto };
       _pendingUpdates = [];
       for (const [fn, treino] of Object.entries(openTreinos)) {
         const items = _coletarDadosAtualizacao(treino.node);
@@ -263,9 +265,25 @@ function _mostrarModalAtualizacoes() {
         <button class="modal-cancel">Não</button>
         <button class="modal-confirm">Atualizar</button>
       </div>
+      <button class="registros-btn" id="_novo-treino-btn" style="width:100%;margin-top:8px">
+        <i class="ti ti-file-plus"></i> Usar como novo treino
+      </button>
     </div>`;
   overlay.querySelector('.modal-cancel').addEventListener('click', () => { overlay.remove(); _concluirTreino(); });
   overlay.querySelector('.modal-confirm').addEventListener('click', () => _aplicarAtualizacoesTreino(overlay));
+  overlay.querySelector('#_novo-treino-btn').addEventListener('click', () => {
+    overlay.remove();
+    if (_registroSalvo) {
+      const label = _registroSalvo.fileName.replace(/\.txt$/, '');
+      const m = label.match(/^(\d{4})-(\d{2})-(\d{2})\s+(.+?)(\s+-\d+)?$/);
+      _registroFileName = _registroSalvo.fileName;
+      _registroConteudo = _registroSalvo.texto;
+      _registroTitulo   = m ? m[4] : label;
+    }
+    for (const key of Object.keys(openTreinos)) delete openTreinos[key];
+    currentTreino = null;
+    usarComoNovoTreino();
+  });
   document.body.appendChild(overlay);
 }
 
