@@ -18,19 +18,19 @@ function initSectionDragAndDrop(container) {
   });
   container.addEventListener('dragend', () => {
     if (dragged) { dragged.classList.remove('dragging'); dragged = null; }
-    container.querySelectorAll('.section').forEach(s => s.classList.remove('drag-over'));
+    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
   });
   container.addEventListener('dragover', e => {
     if (!dragged) return;
-    const target = e.target.closest('.section');
+    const target = e.target.closest('.section, .exercises-section');
     if (!target || target === dragged || !container.contains(target)) return;
     e.preventDefault();
-    container.querySelectorAll('.section').forEach(s => s.classList.remove('drag-over'));
+    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
     target.classList.add('drag-over');
   });
   container.addEventListener('drop', e => {
     if (!dragged) return;
-    const target = e.target.closest('.section');
+    const target = e.target.closest('.section, .exercises-section');
     if (!target || target === dragged || !container.contains(target)) return;
     e.preventDefault();
     target.classList.remove('drag-over');
@@ -54,18 +54,18 @@ function initSectionDragAndDrop(container) {
     dragged.style.display = 'none';
     const below = document.elementFromPoint(clientX, clientY);
     dragged.style.display = '';
-    const target = below?.closest('.section');
-    container.querySelectorAll('.section').forEach(s => s.classList.remove('drag-over'));
+    const target = below?.closest('.section, .exercises-section');
+    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
     if (target && target !== dragged && container.contains(target))
       target.classList.add('drag-over');
   }, { passive: false });
 
   container.addEventListener('touchend', () => {
     if (!dragged) return;
-    const target = container.querySelector('.section.drag-over');
+    const target = container.querySelector('.section.drag-over, .exercises-section.drag-over');
     if (target) _moveSection(container, dragged, target);
     dragged.classList.remove('dragging');
-    container.querySelectorAll('.section').forEach(s => s.classList.remove('drag-over'));
+    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
     dragged = null;
   });
 }
