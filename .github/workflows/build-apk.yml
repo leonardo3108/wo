@@ -33,11 +33,12 @@ jobs:
 
       - name: Restore debug keystore
         run: |
-          mkdir -p $HOME/.android
-          echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > $HOME/.android/debug.keystore
-          mkdir -p $HOME/.gradle/.android
-          cp $HOME/.android/debug.keystore $HOME/.gradle/.android/debug.keystore
-          keytool -list -keystore $HOME/.android/debug.keystore -storepass android -alias androiddebugkey 2>&1 | grep SHA-256
+          echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > /tmp/debug.keystore
+          for dir in $HOME/.android $HOME/.gradle/.android $HOME/.config/.android; do
+            mkdir -p $dir
+            cp /tmp/debug.keystore $dir/debug.keystore
+          done
+          keytool -list -keystore /tmp/debug.keystore -storepass android -alias androiddebugkey 2>&1 | grep SHA-256
 
       - name: Build APK debug
         run: |
@@ -45,10 +46,9 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Check keystore after build
+      - name: Check APK signature
         run: |
-          find / -name "debug.keystore" 2>/dev/null
-          keytool -list -keystore $HOME/.android/debug.keystore -storepass android -alias androiddebugkey 2>&1 | grep SHA-256
+          $ANDROID_HOME/build-tools/*/apksigner verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | grep SHA-256
 
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk wo-debug.apk
