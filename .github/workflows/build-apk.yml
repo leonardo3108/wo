@@ -47,8 +47,7 @@ jobs:
 
       - name: Check keystore after build
         run: |
-          echo "HOME/.android:"; ls -la $HOME/.android/
-          echo "HOME/.gradle/.android:"; ls -la $HOME/.gradle/.android/ 2>/dev/null || echo "não existe"
+          find / -name "debug.keystore" 2>/dev/null
           keytool -list -keystore $HOME/.android/debug.keystore -storepass android -alias androiddebugkey 2>&1 | grep SHA-256
 
       - name: Rename APK
