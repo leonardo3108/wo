@@ -35,8 +35,8 @@ jobs:
         run: |
           mkdir -p $HOME/.android
           echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > $HOME/.android/debug.keystore
-          mkdir -p $GRADLE_USER_HOME/.android
-          cp $HOME/.android/debug.keystore $GRADLE_USER_HOME/.android/debug.keystore
+          mkdir -p $HOME/.gradle/.android
+          cp $HOME/.android/debug.keystore $HOME/.gradle/.android/debug.keystore
           keytool -list -keystore $HOME/.android/debug.keystore -storepass android -alias androiddebugkey 2>&1 | grep SHA-256
 
       - name: Build APK debug
@@ -48,8 +48,8 @@ jobs:
       - name: Check keystore after build
         run: |
           echo "HOME/.android:"; ls -la $HOME/.android/
-          echo "GRADLE_USER_HOME/.android:"; ls -la $GRADLE_USER_HOME/.android/ 2>/dev/null || echo "não existe"
-          keytool -list -keystore $GRADLE_USER_HOME/.android/debug.keystore -storepass android -alias androiddebugkey 2>&1 | grep SHA-256
+          echo "HOME/.gradle/.android:"; ls -la $HOME/.gradle/.android/ 2>/dev/null || echo "não existe"
+          keytool -list -keystore $HOME/.android/debug.keystore -storepass android -alias androiddebugkey 2>&1 | grep SHA-256
 
       - name: Rename APK
         run: cp android/app/build/outputs/apk/debug/app-debug.apk wo-debug.apk
