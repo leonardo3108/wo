@@ -163,7 +163,7 @@ No server, no framework, no build step. The web app is plain HTML + vanilla JS s
 5. Taps load value → `treino-execucao-interacoes.js/editCarga()` — opens inline editor for load
 6. Taps note icon → `treino-execucao-interacoes.js/toggleObs()` — opens/closes the notes field on a card
 7. Holds and drags a card → `treino-execucao-interacoes.js/initDragAndDrop()` — reorders cards within a section
-8. Holds and drags a section → `treino-execucao-interacoes.js/initSectionDragAndDrop()` — reorders sections
+8. Holds and drags a section → `treino-execucao-interacoes.js/initSectionDragAndDrop()` — reorders sections; drops onto individual exercise cards trigger `_splitAndInsert()`, which splits the exercises block at the target card and inserts the section between the two halves
 
 **Complete session**
 1. Taps **Concluir treino** → `registro.js/registrar()` — triggers log generation and saves `.txt` to `Registros/`
