@@ -192,12 +192,7 @@ function buildTreinoNode(title, subtitle, sections, fileName, editMode = false) 
   function flushCards() {
     if (cards.length) {
       hasExercisesSection = true;
-      html += `<div class="exercises-section">
-        ${cards.join('')}
-        <button class="add-exercise-btn" onclick="openAddModal(this)">
-          <i class="ti ti-plus"></i> Adicionar exercício
-        </button>
-      </div>`;
+      html += `<div class="exercises-section">${cards.join('')}</div>`;
       cards.length = 0;
     }
   }
@@ -214,12 +209,12 @@ function buildTreinoNode(title, subtitle, sections, fileName, editMode = false) 
   }
   flushCards();
   if (!hasExercisesSection) {
-    html += `<div class="exercises-section">
-      <button class="add-exercise-btn" onclick="openAddModal(this)">
-        <i class="ti ti-plus"></i> Adicionar exercício
-      </button>
-    </div>`;
+    html += `<div class="exercises-section"></div>`;
   }
+
+  html += `<button class="add-exercise-btn" onclick="openAddModal(this)">
+    <i class="ti ti-plus"></i> Adicionar exercício
+  </button>`;
 
   if (editMode) {
     html += `<div class="edit-bar">
@@ -236,6 +231,12 @@ function buildTreinoNode(title, subtitle, sections, fileName, editMode = false) 
   }
 
   node.innerHTML = html;
+
+  // Reposiciona o botão logo após o último exercises-section
+  const addBtn = node.querySelector('.add-exercise-btn');
+  const lastEx = [...node.querySelectorAll('.exercises-section')].at(-1);
+  if (addBtn && lastEx) lastEx.after(addBtn);
+
   node.querySelectorAll('.exercises-section').forEach(s => initDragAndDrop(s));
   initSectionDragAndDrop(node);
   return node;

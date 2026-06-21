@@ -6,8 +6,39 @@ function _moveSection(container, dragged, target) {
   else target.before(dragged);
 }
 
+// Divide um exercises-section em dois, inserindo sectionEl entre eles.
+// insertBefore=true → inserir ANTES de targetCard; false → DEPOIS.
+function _splitAndInsert(exercisesSection, targetCard, insertBefore, sectionEl) {
+  const cards = [...exercisesSection.querySelectorAll('.exercise-card')];
+  const splitIdx = insertBefore ? cards.indexOf(targetCard) : cards.indexOf(targetCard) + 1;
+
+  if (splitIdx <= 0) { exercisesSection.before(sectionEl); return; }
+  if (splitIdx >= cards.length) { exercisesSection.after(sectionEl); return; }
+
+  // Cria novo exercises-section com as cards a partir de splitIdx
+  const newSec = document.createElement('div');
+  newSec.className = 'exercises-section';
+  cards.slice(splitIdx).forEach(c => newSec.appendChild(c));
+
+  exercisesSection.after(newSec);
+  exercisesSection.after(sectionEl);
+  initDragAndDrop(newSec);
+}
+
 function initSectionDragAndDrop(container) {
   let dragged = null;
+
+  function _clearHighlights() {
+    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
+    container.querySelectorAll('.exercise-card').forEach(c => c.classList.remove('drag-over-before', 'drag-over-after'));
+  }
+
+  function _highlightCard(card, clientY) {
+    const rect = card.getBoundingClientRect();
+    const before = clientY < rect.top + rect.height / 2;
+    card.classList.add(before ? 'drag-over-before' : 'drag-over-after');
+    return before;
+  }
 
   // ── Desktop: HTML5 drag, só a partir do handle ─────────────────
   container.addEventListener('dragstart', e => {
@@ -16,24 +47,47 @@ function initSectionDragAndDrop(container) {
     if (!dragged) return;
     setTimeout(() => dragged.classList.add('dragging'), 0);
   });
+
   container.addEventListener('dragend', () => {
     if (dragged) { dragged.classList.remove('dragging'); dragged = null; }
-    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
+    _clearHighlights();
   });
+
   container.addEventListener('dragover', e => {
     if (!dragged) return;
+    _clearHighlights();
+
+    // Card individual tem prioridade (permite split)
+    const card = e.target.closest('.exercise-card');
+    if (card && container.contains(card)) {
+      e.preventDefault();
+      _highlightCard(card, e.clientY);
+      return;
+    }
+
     const target = e.target.closest('.section, .exercises-section');
     if (!target || target === dragged || !container.contains(target)) return;
     e.preventDefault();
-    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
     target.classList.add('drag-over');
   });
+
   container.addEventListener('drop', e => {
     if (!dragged) return;
+
+    const card = e.target.closest('.exercise-card');
+    if (card && container.contains(card)) {
+      e.preventDefault();
+      const insertBefore = card.classList.contains('drag-over-before');
+      _clearHighlights();
+      _splitAndInsert(card.closest('.exercises-section'), card, insertBefore, dragged);
+      dragged = null;
+      return;
+    }
+
     const target = e.target.closest('.section, .exercises-section');
     if (!target || target === dragged || !container.contains(target)) return;
     e.preventDefault();
-    target.classList.remove('drag-over');
+    _clearHighlights();
     _moveSection(container, dragged, target);
     dragged = null;
   });
@@ -54,18 +108,36 @@ function initSectionDragAndDrop(container) {
     dragged.style.display = 'none';
     const below = document.elementFromPoint(clientX, clientY);
     dragged.style.display = '';
+    _clearHighlights();
+
+    const card = below?.closest('.exercise-card');
+    if (card && container.contains(card)) {
+      _highlightCard(card, clientY);
+      return;
+    }
+
     const target = below?.closest('.section, .exercises-section');
-    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
     if (target && target !== dragged && container.contains(target))
       target.classList.add('drag-over');
   }, { passive: false });
 
   container.addEventListener('touchend', () => {
     if (!dragged) return;
+
+    const card = container.querySelector('.exercise-card.drag-over-before, .exercise-card.drag-over-after');
+    if (card) {
+      const insertBefore = card.classList.contains('drag-over-before');
+      _clearHighlights();
+      _splitAndInsert(card.closest('.exercises-section'), card, insertBefore, dragged);
+      dragged.classList.remove('dragging');
+      dragged = null;
+      return;
+    }
+
     const target = container.querySelector('.section.drag-over, .exercises-section.drag-over');
     if (target) _moveSection(container, dragged, target);
     dragged.classList.remove('dragging');
-    container.querySelectorAll('.section, .exercises-section').forEach(s => s.classList.remove('drag-over'));
+    _clearHighlights();
     dragged = null;
   });
 }

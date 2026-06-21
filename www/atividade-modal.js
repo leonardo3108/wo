@@ -2,7 +2,9 @@ let _targetSection = null;
 let _modalTipo = 'musculacao';
 
 function openAddModal(btn) {
-  _targetSection = btn.closest('.exercises-section');
+  const tc = btn.closest('.treino-content');
+  const all = tc ? [...tc.querySelectorAll('.exercises-section')] : [];
+  _targetSection = all[all.length - 1] || tc;
   _modalTipo = 'musculacao';
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -130,8 +132,7 @@ function _addActivity(overlay) {
         oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>` : ''}`;
 
     card.dataset.added = 'true';
-    const ab = _targetSection.querySelector('.add-exercise-btn');
-    _targetSection.insertBefore(card, ab);
+    _targetSection.appendChild(card);
     overlay.remove();
     return;
   }
@@ -167,8 +168,8 @@ function _addActivity(overlay) {
 }
 
 function _insertSectionInTreino(sectionEl) {
-  const treinoContent = _targetSection.closest('.treino-content');
-  const editBar = treinoContent.querySelector('.edit-bar');
-  if (editBar) treinoContent.insertBefore(sectionEl, editBar);
+  const treinoContent = _targetSection?.closest?.('.treino-content') || document.querySelector('.treino-content');
+  const anchor = treinoContent.querySelector('.add-exercise-btn') || treinoContent.querySelector('.edit-bar');
+  if (anchor) treinoContent.insertBefore(sectionEl, anchor);
   else treinoContent.appendChild(sectionEl);
 }
