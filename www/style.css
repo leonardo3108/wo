@@ -649,7 +649,7 @@ body {
 .registro-item-name { font-size: 15px; font-weight: 600; color: #1c1c1e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .registro-item-date { font-size: 13px; color: #636366; margin-top: 2px; }
 
-.registro-detalhe { display: flex; flex-direction: column; min-height: 100vh; }
+.registro-detalhe { display: flex; flex-direction: column; min-height: 100vh; user-select: none; }
 .registro-texto {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
   font-size: 13px;
@@ -659,6 +659,7 @@ body {
   word-break: break-word;
   padding: 1rem;
   flex: 1;
+  user-select: text;
 }
 
 /* ── Registrar button ── */
