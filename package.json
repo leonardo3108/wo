@@ -1,6 +1,6 @@
 {
   "name": "wo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PWA workout tracker — reads .md training files and turns them into an interactive gym session app. No server, no framework.",
   "author": "Leonardo Pacheco<leonardo3108@gmail.com>",
   "license": "AGPL-3.0",
