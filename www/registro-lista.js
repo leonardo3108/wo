@@ -249,20 +249,18 @@ async function mostrarRegistro(fileName) {
     const subtitulo = [dateStr, horaStr].filter(Boolean).join(' - ');
     const tituloCompleto = subtitulo ? `${_registroTitulo} - ${subtitulo}` : _registroTitulo;
 
+    const conteudo = _registroConteudo.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     app.innerHTML = `<div class="registro-detalhe">
-      <div class="registros-header" style="-webkit-user-select:none;user-select:none">
+      <div class="registros-header">
         <button class="icon-btn" onclick="verRegistros()"><i class="ti ti-arrow-left"></i></button>
         <h2 style="font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tituloCompleto}</h2>
         <button class="icon-btn" onclick="compartilharRegistro()" title="Compartilhar"><i class="ti ti-share"></i></button>
       </div>
-      <textarea class="registro-texto" readonly spellcheck="false"></textarea>
-      <div style="padding:0.75rem 1rem calc(1.5rem + env(safe-area-inset-bottom));-webkit-user-select:none;user-select:none">
+      <pre class="registro-texto">${conteudo}</pre>
+      <div style="padding:0.75rem 1rem calc(1.5rem + env(safe-area-inset-bottom))">
         <button class="registros-btn" style="width:100%" onclick="usarComoNovoTreino()"><i class="ti ti-file-plus"></i> Usar como novo Treino</button>
       </div>
     </div>`;
-    const ta = app.querySelector('.registro-texto');
-    ta.value = _registroConteudo;
-    ta.style.height = ta.scrollHeight + 'px';
   } catch(e) {
     app.innerHTML = `<div class="registro-detalhe"><div class="registros-header"><button class="icon-btn" onclick="verRegistros()"><i class="ti ti-arrow-left"></i></button><h2>Erro</h2><div style="width:32px"></div></div><div style="padding:2rem;text-align:center;color:#636366">${e.message||e}</div></div>`;
   }
