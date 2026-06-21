@@ -18,6 +18,9 @@ ios/App/build/
 .env
 .env.local
 
+# IDE
+.idea/
+
 # Sistema operacional
 .DS_Store
 Thumbs.db
